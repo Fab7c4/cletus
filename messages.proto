@@ -16,10 +16,10 @@ enum UpDown {
 
 message Rc {
   required Timestamp timestamp = 1;
-  required int32 rcThrottle = 2;
-  required int32 rcYaw = 3;
-  required int32 rcPitch = 4;
-  required int32 rcRoll = 5;
+  required double rcThrottle = 2;
+  required double rcYaw = 3;
+  required double rcPitch = 4;
+  required double rcRoll = 5;
   required bool rcKill = 6;
   optional UpDown rcGear = 7;
   optional Mode3  rcAux2 = 8;
@@ -38,41 +38,17 @@ message Timestamp {
   required uint64 tnsec = 2;
 }
 
-message GpsData
+message Gps
 {
-    required uint32 time =1;
-    required Xyz data = 2;
-    required double v_accuracy = 3;
-    required double h_accuracy = 4;
-    required uint32 n_satellites = 5;
-}
-
-
-message Gps{
     required Timestamp timestamp = 1;
-    required GpsData position = 2;
-    required GpsData velocity = 3;
+    required uint32 timeOfWeek =2;
+    required Xyz data = 3;
+    required double v_accuracy = 4;
+    required double h_accuracy = 5;
+    required uint32 n_satellites = 6;
+    required bool fixedRTK = 7;
 }
 
-message GpsLLH{
-    required Timestamp timestamp = 1;
-    required GpsData position = 2;
-}
-
-message Gyro{
-    required Timestamp timestamp = 1;
-    required Xyz data = 2;
-}
-
-message Accel{
-    required Timestamp timestamp = 1;
-    required Xyz data = 2;
-}
-
-message Mag{
-    required Timestamp timestamp = 1;
-    required Xyz data = 2;
-}
 
 message Airspeed{
     required Timestamp timestamp = 1;
@@ -98,6 +74,16 @@ enum Direction {
     required Direction direction = 10;
 }
 
+message IMU
+{
+    required uint32 sequenceNumber =1 [default=0];
+    required Timestamp timestamp = 2;
+    required Xyz accel = 3;
+    required Xyz gyro = 4;
+    required Xyz mag =5;
+};
+
+
 
 
 
@@ -111,13 +97,12 @@ enum Type {
 
 // Identifies which field is filled in.
 required Type type = 1;
+required IMU imu = 2;
 
-// One of the following will be filled in.
-  required Gyro gyro = 2;
-  required Accel accel = 3;
-  required Mag mag =4;
-  optional Airspeed airspeed =5;
-  optional Gps gps =6 ;
+// following may be filled in.
+  optional Airspeed airspeed =3;
+  optional Gps gps_position =4 ;
+  optional Gps gps_velocity =5 ;
 }
 
 message Actuators {
@@ -187,7 +172,7 @@ enum Process
   optional Sensors sensors = 2;
   optional Actuators actuators = 3;
   optional Rc rc = 4;
-  optional GpsLLH gps_llh = 5;
+  optional Gps gps_llh = 5;
   optional Servos servos = 6;
 }
 

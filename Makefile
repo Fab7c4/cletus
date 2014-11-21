@@ -6,24 +6,26 @@ PROJ =  run_uart run_sensors run_controller run_actuators run_function_test test
 # What C or C++ files must we compile to make the executable?
 C_SRC = run_uart.c \
 	run_controller.c \
- 	run_actuators.c \
- 	run_sensors.c \
+	run_actuators.c \
+	run_sensors.c \
 	run_print_output.c \
 	sensors.c \
- 	uart.c \
+	uart.c \
 	controller.c \
 	actuators.c \
 	print_output.c \
- 	misc.c \
- 	zmq.c \
- 	run_function_test.c \
+	misc.c \
+	zmq.c \
+	run_function_test.c \
 	tests/test_uart.c   \
 	tests/test_lisa_message.c \
 	tests/log_lisa.c \
 	sim_uart.c \
 	run_logger.c \
         piksi/piksi.c \
-        piksi/fifo.c
+        piksi/fifo.c \
+        ftdi_device.c \
+        lisa.c
 
 
 
@@ -31,7 +33,7 @@ CXX_SRC = \
 #	main.cpp \
 #	parsing.cpp
 
-LIBS = $(shell pkg-config --libs libzmq) $(shell pkg-config --libs libprotobuf-c)-lm -lrt -lprotobuf  -pthread -Lpiksi/libswiftnav/build/src -lswiftnav-static 
+LIBS = $(shell pkg-config --libs libzmq) $(shell pkg-config --libs libprotobuf-c)-lm -lrt -lprotobuf  -pthread -Lpiksi/libswiftnav/build/src -lswiftnav-static -Llibftdi/build/src -lftdi1
 
 Q ?= @
 
@@ -41,7 +43,7 @@ PROTOS_CXX = protos_cpp/messages.pb.cc \
 PROTOS_C = protos_c/messages.pb-c.c \
            protos_c/messages.pb-c.h
 
-PROTOS_PY = messages_pb2.py
+PROTOS_PY = logviewer/messages_pb2.py
 
 HS_PROTOS = hs/src/Messages.hs
 
@@ -51,7 +53,7 @@ HS_PROTOS = hs/src/Messages.hs
 UNAME := $(shell uname)
 
 LDFLAGS = $(LIBS)
-INCLUDES = -I./protos_c
+INCLUDES = -I./protos_c -I./libftdi/include
 
 
 ifeq ($(UNAME),Darwin)
@@ -66,7 +68,7 @@ OBJ = $(C_SRC:%.c=%.o) $(CXX_SRC:%.cpp=%.o) $(CXX_SRC:%.cc=%.o) protos_c/message
 ## Compile pedantically and save pain later
 CXX_WARNINGFLAGS = -Wall -Wextra -Wshadow
 C_WARNINGFLAGS =  -Wall -Wextra -Wshadow -Wstrict-prototypes
-C_WARNINGFLAGS += -Wimplicit -Wswitch-default -Wswitch-enum -Wundef -Wuninitialized -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wcast-align -Wformat=2 -Wimplicit-function-declaration -Wredundant-decls -Wformat-security -Wstrict-overflow -march=native 
+C_WARNINGFLAGS += -Wimplicit -Wswitch-default -Wswitch-enum -Wundef -Wuninitialized -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wcast-align -Wformat=2 -Wimplicit-function-declaration -Wredundant-decls -Wformat-security -Wstrict-overflow -march=native
 C_FEATUREFLAGS = -ftree-vectorize -flto -fPIC -D_FORTIFY_SOURCE=2 -fstack-protector-all -fno-strict-overflow -ftrapv
 C_WARNINGFLAGS += -Werror
 CXX_WARNINGFLAGS += -Werror
@@ -127,7 +129,7 @@ $(PROTOS_CXX) : messages.proto
 
 $(PROTOS_PY) : messages.proto
 	@echo protoc $< \(python\)
-	$(Q)protoc --python_out=. $<
+	$(Q)protoc --python_out=./logviewer $<
 
 protos_cpp/messages.pb.o : protos_cpp/messages.pb.cc protos_cpp/messages.pb.h
 	@echo CXX protos_cpp/messages.pb.cc
@@ -157,10 +159,10 @@ sim/src/Structs/Structures.hs : sim/src/Structs/Structures.hsc
 clean:
 	rm -f $(PROJ)
 	rm -f $(PROTOS)
-	rm -f hs/src/Messages.hs
-	rm -rf hs/src/Messages/*
+	rm -f hs/src/Protobetty.hs
+	rm -rf hs/src/Protobetty/*
 	rm -f protos_cpp/messages.pb.*
 	rm -f protos_c/messages.pb-c.*
-	rm -f messages_pb2.py messages_pb2.pyc
+	rm -f logviewer/messages_pb2.py messages_pb2.pyc
 	rm -f $(OBJ)
 	rm -f $(HS_STRUCTS)

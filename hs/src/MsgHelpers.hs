@@ -15,12 +15,16 @@ import Linear hiding ( cross )
 import System.Clock
 
 --import qualified Messages.Rc as Msg
-import qualified Messages.Sensors as Msg
-import qualified Messages.Timestamp as Msg
-import qualified Messages.Xyz as Msg
-import qualified Messages.AcState as Msg
-import qualified Messages.Actuators as Msg
-import qualified Messages.Dcm as Msg
+import qualified Protobetty.Gps as MsgGps
+import qualified Protobetty.Sensors.Type as MsgType
+import qualified Protobetty.GpsData as MsgGpsData
+import qualified Protobetty.IMU as MsgIMU
+import qualified Protobetty.Sensors as Msg
+import qualified Protobetty.Timestamp as Msg
+import qualified Protobetty.Xyz as Msg
+import qualified Protobetty.AcState as Msg
+import qualified Protobetty.Actuators as Msg
+import qualified Protobetty.Dcm as Msg
 
 import Model.Aircraft
 import Model.AeroCoeffs
@@ -53,8 +57,8 @@ toActuators u =
   , Msg.ail = csAil cs
   , Msg.rudd = csRudder cs
   , Msg.elev = csElev cs
-  , Msg.start = Msg.Timestamp 0 0
-  , Msg.stop = Msg.Timestamp 0 0
+  , Msg.timestamp = Msg.Timestamp 0 0
+  , Msg.timestamp_sensors = Just $ Msg.Timestamp 0 0
   }
   where
     cs = acSurfaces u
@@ -72,11 +76,31 @@ toDcmMsg (Rot xyz) = Msg.Dcm (toXyz x) (toXyz y) (toXyz z)
 toCSensors :: Real a => Sensors a -> TimeSpec -> Msg.Sensors
 toCSensors y ts =
   Msg.Sensors
-  { Msg.timestamp = toTimestamp ts
-  , Msg.gyro = toXyz $ y_gyro y
-  , Msg.accel = toXyz $ y_accel y
-  , Msg.gps_pos = toXyz $ y_gps_pos y
-  , Msg.gps_vel = toXyz $ y_gps_vel y
+  { Msg.type' = MsgType.IMU_GPS
+  , Msg.imu = MsgIMU.IMU { MsgIMU.sequenceNumber = 0
+                         , MsgIMU.timestamp = toTimestamp ts
+                         , MsgIMU.gyro = toXyz $ y_gyro y
+                         , MsgIMU.accel = toXyz $ y_accel y
+                         , MsgIMU.mag = Msg.Xyz 0 0 0
+                            }
+  , Msg.gps = Just $
+              MsgGps.Gps { MsgGps.timestamp = toTimestamp ts
+                         , MsgGps.position = MsgGpsData.GpsData
+                                             { MsgGpsData.time = 0
+                                             , MsgGpsData.data' = toXyz $ y_gps_pos y
+                                             , MsgGpsData.v_accuracy = 1
+                                             , MsgGpsData.h_accuracy = 1
+                                             , MsgGpsData.n_satellites = 0
+                                             }
+                         , MsgGps.velocity = MsgGpsData.GpsData
+                                             { MsgGpsData.time = 0
+                                             , MsgGpsData.data' = toXyz $ y_gps_vel y
+                                             , MsgGpsData.v_accuracy = 1
+                                             , MsgGpsData.h_accuracy = 1
+                                             , MsgGpsData.n_satellites = 0
+                                             }
+                         }
+  , Msg.airspeed = Nothing
   }
 
 
