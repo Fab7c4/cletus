@@ -30,6 +30,9 @@ int main (int argc, char** argv) {
     for(int16_t i = 0;i < numOfSamples ; i++) {
         // Do one send operation
         //my_udp.sendUDP(i);
+        printf("compX: %i\n", my_values.compX);
+        printf("compY: %i\n", my_values.compY);
+        printf("compZ: %i\n", my_values.compZ);
         my_udp.sendUDPstruct(&my_values);
         //int16_t value = my_udp.receiveUDP();
         //printf("The received value is: %i\n", value);

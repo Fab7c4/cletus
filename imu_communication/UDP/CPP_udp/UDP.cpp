@@ -91,7 +91,7 @@ void UDP::sendUDP(int16_t value) {
 }
 
 void UDP::sendUDPstruct(SensorValues *values) {
-    if (sendto(_udp_socket, &values, sizeof(struct SensorValues), 0, (struct sockaddr*)&_addr_other, _socketlen) == -1) {
+    if (sendto(_udp_socket, values, sizeof(struct SensorValues), 0, (struct sockaddr*)&_addr_other, _socketlen) == -1) {
         printf("Failed to send udp data: %s\n", strerror(errno));
         exit(1);
     }
