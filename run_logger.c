@@ -26,7 +26,7 @@
 #include "./protos_c/messages.pb-c.h"
 
 
-#define BYTES_FOR_LOGGING 10 * 1024 *1024
+#define BYTES_FOR_LOGGING 20 * 1024 *1024
 #define MAX_NUMBER_OF_MESSAGES BYTES_FOR_LOGGING/50
 
 static long safe_to_file(void);
