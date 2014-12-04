@@ -498,7 +498,9 @@ void piksi_pos_llh_callback(u_int16_t sender_id __attribute__((unused)), u_int8_
     get_protbetty_timestamp(&gps_time);
     gps_llh.timestamp = &gps_time;
     log_data.gps_llh = &gps_llh;
+#ifdef DEBUG
     printf("pos_llh: lat: %f, long: %f, height: %f \n", pos_llh.lat, pos_llh.lon, pos_llh.height);
+#endif
 }
 void piksi_heartbeat_callback(u_int16_t sender_id __attribute__((unused)), u_int8_t len __attribute__((unused)), u8 msg[], void *context __attribute__((unused)))
 {
