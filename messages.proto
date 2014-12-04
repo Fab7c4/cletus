@@ -38,26 +38,17 @@ message Timestamp {
   required uint64 tnsec = 2;
 }
 
-message GpsData
+message Gps
 {
-    required uint32 time =1;
-    required Xyz data = 2;
-    required double v_accuracy = 3;
-    required double h_accuracy = 4;
-    required uint32 n_satellites = 5;
-}
-
-
-message Gps{
     required Timestamp timestamp = 1;
-    required GpsData position = 2;
-    required GpsData velocity = 3;
+    required uint32 timeOfWeek =2;
+    required Xyz data = 3;
+    required double v_accuracy = 4;
+    required double h_accuracy = 5;
+    required uint32 n_satellites = 6;
+    required bool fixedRTK = 7;
 }
 
-message GpsLLH{
-    required Timestamp timestamp = 1;
-    required GpsData position = 2;
-}
 
 message Airspeed{
     required Timestamp timestamp = 1;
@@ -106,11 +97,12 @@ enum Type {
 
 // Identifies which field is filled in.
 required Type type = 1;
+required IMU imu = 2;
 
-// One of the following will be filled in.
-  required IMU imu = 2;
+// following may be filled in.
   optional Airspeed airspeed =3;
-  optional Gps gps =4 ;
+  optional Gps gps_position =4 ;
+  optional Gps gps_velocity =5 ;
 }
 
 message Actuators {
@@ -180,7 +172,7 @@ enum Process
   optional Sensors sensors = 2;
   optional Actuators actuators = 3;
   optional Rc rc = 4;
-  optional GpsLLH gps_llh = 5;
+  optional Gps gps_llh = 5;
   optional Servos servos = 6;
 }
 

@@ -213,9 +213,9 @@ int main(int argc __attribute__((unused)),
                                calcCurrentLatencyProto(sensors_ptr->imu->timestamp));
                     break;
                 case PROTOBETTY__SENSORS__TYPE__IMU_GPS:
-                    send_debug(zsock_print, TAG,"Controller received Sensor data containing: IMU ; GPS\nLatencies: IMU=%f \tGPS=%f",
-                               calcCurrentLatencyProto(sensors_ptr->imu->timestamp),
-                               calcCurrentLatencyProto(sensors_ptr->gps->timestamp));
+//                    send_debug(zsock_print, TAG,"Controller received Sensor data containing: IMU ; GPS\nLatencies: IMU=%f \tGPS=%f",
+//                               calcCurrentLatencyProto(sensors_ptr->imu->timestamp),
+//                               calcCurrentLatencyProto(sensors_ptr->gps->timestamp));
                     break;
                 case PROTOBETTY__SENSORS__TYPE__IMU_AIRSPEED:
                     send_debug(zsock_print, TAG,"Controller received Sensor data containing: IMU ; AIRSPEED\nLatencies: IMU=%f \tAIRSPEED=%f",
@@ -223,10 +223,10 @@ int main(int argc __attribute__((unused)),
                                calcCurrentLatencyProto(sensors_ptr->airspeed->timestamp));
                     break;
                 case PROTOBETTY__SENSORS__TYPE__IMU_GPS_AIRSPEED:
-                    send_debug(zsock_print, TAG,"Controller received Sensor data containing: IMU ; GPS ; AIRSPEED\nLatencies: IMU=%f \tGPS=%f \tAIRSPEED=%f",
-                               calcCurrentLatencyProto(sensors_ptr->imu->timestamp),
-                               calcCurrentLatencyProto(sensors_ptr->gps->timestamp),
-                               calcCurrentLatencyProto(sensors_ptr->airspeed->timestamp));
+//                    send_debug(zsock_print, TAG,"Controller received Sensor data containing: IMU ; GPS ; AIRSPEED\nLatencies: IMU=%f \tGPS=%f \tAIRSPEED=%f",
+//                               calcCurrentLatencyProto(sensors_ptr->imu->timestamp),
+//                               calcCurrentLatencyProto(sensors_ptr->gps->timestamp),
+//                               calcCurrentLatencyProto(sensors_ptr->airspeed->timestamp));
                     break;
                 case _PROTOBETTY__SENSORS__TYPE_IS_INT_SIZE:
                     send_debug(zsock_print, TAG,"Controller received Sensor data containing: INT SIZE case -> no valid type\n");

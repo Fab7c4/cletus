@@ -67,7 +67,8 @@ void *zsock_print = NULL;
 
 
 Protobetty__Sensors sensors;
-Protobetty__Gps gps;
+Protobetty__Gps gps_pos;
+Protobetty__Gps gps_vel;
 Protobetty__LogMessage log_data;
 
 
@@ -210,9 +211,16 @@ int main(int argc __attribute__((unused)),
 #endif
 #ifdef GPS
     //Initialize Protobuf for GPS
-    protobetty__gps__init(&gps);
-    Protobetty__Timestamp gps_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-    gps.timestamp = &gps_timestamp;
+    protobetty__gps__init(&gps_pos);
+    Protobetty__Xyz gps_pos_data = PROTOBETTY__XYZ__INIT;
+    gps_pos.data = &gps_pos_data;
+    Protobetty__Timestamp gps_pos_timestamp = PROTOBETTY__TIMESTAMP__INIT;
+    gps_pos.timestamp = &gps_pos_timestamp;
+    protobetty__gps__init(&gps_vel);
+    Protobetty__Xyz gps_vel_data = PROTOBETTY__XYZ__INIT;
+    gps_pos.data = &gps_vel_data;
+    Protobetty__Timestamp gps_vel_timestamp = PROTOBETTY__TIMESTAMP__INIT;
+    gps_pos.timestamp = &gps_vel_timestamp;
 #endif
     protobetty__log_message__init(&log_data);
     Protobetty__Servos servos = PROTOBETTY__SERVOS__INIT;
@@ -328,7 +336,7 @@ int main(int argc __attribute__((unused)),
                                        calcCurrentLatencyProto(gyro.timestamp)*1e3,
                                        gyro.data->x, gyro.data->y, gyro.data->z);
                             break;
-}
+                        }
                         case IMU_MAG_SCALED:
                         {
                             const imu_raw_t* data_ptr = (imu_raw_t*)&buffer[LISA_INDEX_MSG_LENGTH];
@@ -416,11 +424,11 @@ int main(int argc __attribute__((unused)),
         if (sensors.imu  != NULL)
         {
             //set message type corresponding to the data currently available
-            if ((sensors.gps != NULL) && (sensors.airspeed != NULL))
+            if ((sensors.gps_position != NULL || sensors.gps_velocity != NULL) && (sensors.airspeed != NULL))
             {
                 sensors.type = PROTOBETTY__SENSORS__TYPE__IMU_GPS_AIRSPEED;
             }
-            else if (sensors.gps != NULL)
+            else if (sensors.gps_position != NULL || sensors.gps_velocity != NULL)
             {
                 sensors.type = PROTOBETTY__SENSORS__TYPE__IMU_GPS;
             }
@@ -454,13 +462,6 @@ int main(int argc __attribute__((unused)),
             } else {
                 send_debug(zsock_print,TAG,"Message sent to logger!, size: %u\n", packed_length);
             }
-            //Resetting
-            if (sensors.type == PROTOBETTY__SENSORS__TYPE__IMU_GPS
-                    ||sensors.type == PROTOBETTY__SENSORS__TYPE__IMU_GPS_AIRSPEED )
-            {
-                gps.position = NULL;
-                gps.velocity = NULL;
-            }
             protobetty__sensors__init(&sensors);
             protobetty__log_message__init(&log_data);
         }
@@ -481,20 +482,18 @@ void piksi_pos_llh_callback(u_int16_t sender_id __attribute__((unused)), u_int8_
 {
     /* Structs that messages from Piksi will feed. */
     static piksi_position_llh_t pos_llh;
-    static Protobetty__GpsLLH gps_llh = PROTOBETTY__GPS_LLH__INIT;
-    static Protobetty__GpsData gps_pos = PROTOBETTY__GPS_DATA__INIT;
+    static Protobetty__Gps gps_llh = PROTOBETTY__GPS__INIT;
     static Protobetty__Timestamp gps_time = PROTOBETTY__TIMESTAMP__INIT;
     static Protobetty__Xyz xyz = PROTOBETTY__XYZ__INIT;
     pos_llh = *(piksi_position_llh_t *)msg;
-    gps_llh.position = &gps_pos;
-    gps_llh.position->time = pos_llh.tow;
-    gps_llh.position->n_satellites = pos_llh.n_sats;
-    gps_llh.position->h_accuracy = pos_llh.h_accuracy;
-    gps_llh.position->v_accuracy = pos_llh.v_accuracy;
+    gps_llh.data = &xyz;
+    gps_llh.timeofweek = pos_llh.tow;
+    gps_llh.n_satellites = pos_llh.n_sats;
+    gps_llh.h_accuracy = pos_llh.h_accuracy;
+    gps_llh.v_accuracy = pos_llh.v_accuracy;
     xyz.x = pos_llh.lat;
     xyz.y = pos_llh.lon;
     xyz.z = pos_llh.height;
-    gps_llh.position->data = &xyz;
     get_protbetty_timestamp(&gps_time);
     gps_llh.timestamp = &gps_time;
     log_data.gps_llh = &gps_llh;
@@ -511,8 +510,6 @@ void piksi_heartbeat_callback(u_int16_t sender_id __attribute__((unused)), u_int
 void piksi_baseline_ned_callback(u_int16_t sender_id __attribute__((unused)), u_int8_t len __attribute__((unused)), u8 msg[], void *context __attribute__((unused)))
 {
     static piksi_baseline_ned_t baseline_ned;
-    static Protobetty__GpsData gps_pos = PROTOBETTY__GPS_DATA__INIT;
-    static Protobetty__Xyz xyz = PROTOBETTY__XYZ__INIT;
     static piksi_baseline_status_t status;
     static u_int8_t old_status =9;
     baseline_ned = *(piksi_baseline_ned_t *)msg;
@@ -524,12 +521,10 @@ void piksi_baseline_ned_callback(u_int16_t sender_id __attribute__((unused)), u_
     gps_pos.h_accuracy = baseline_ned.h_accuracy * 1e-3;
     gps_pos.v_accuracy = baseline_ned.v_accuracy * 1e-3;
     gps_pos.n_satellites= baseline_ned.n_sats;
-    gps_pos.time = baseline_ned.tow;
-    xyz.x = (double)baseline_ned.n* 1e-3;
-    xyz.y = (double)baseline_ned.e* 1e-3;
-    xyz.z = (double)baseline_ned.d* 1e-3;
-    gps_pos.data = &xyz;
-    gps.position = &gps_pos;
+    gps_pos.timeofweek = baseline_ned.tow;
+    gps_pos.data->x = (double)baseline_ned.n* 1e-3;
+    gps_pos.data->y = (double)baseline_ned.e* 1e-3;
+    gps_pos.data->z = (double)baseline_ned.d* 1e-3;
     //Check status
     memcpy(&status, &baseline_ned.flags, sizeof(piksi_baseline_status_t));
     if (status.fix_status != old_status)
@@ -537,22 +532,24 @@ void piksi_baseline_ned_callback(u_int16_t sender_id __attribute__((unused)), u_
         old_status = status.fix_status;
         switch (status.fix_status) {
         case PIKSI_STATUS_FIXED_RTK:
+            gps_pos.fixedrtk = PIKSI_STATUS_FIXED_RTK;
             set_beaglebone_LED(LED_PATH_3,LED_ON);
             break;
         case PIKSI_STATUS_FLOAT:
+            gps_pos.fixedrtk = PIKSI_STATUS_FLOAT;
             set_beaglebone_LED(LED_PATH_3,LED_OFF);
             break;
         default:
             break;
         }
     }
-    complete_gps_message();
+    sensors.gps_position = &gps_pos;
 }
 void piksi_vel_ned_callback(u_int16_t sender_id __attribute__((unused)), u_int8_t len __attribute__((unused)), u8 msg[], void *context __attribute__((unused)))
 {
     static piksi_velocity_ned_t vel_ned;
-    static Protobetty__GpsData gps_vel = PROTOBETTY__GPS_DATA__INIT;
-    static Protobetty__Xyz xyz = PROTOBETTY__XYZ__INIT;
+    static u_int8_t old_status =9;
+    static piksi_baseline_status_t status;
     vel_ned = *(piksi_velocity_ned_t *)msg;
     send_debug(zsock_print,TAG,"Received PIKSI velocity NED (%u ms) N:%i,E:%i,D:%i",
                vel_ned.tow,
@@ -562,13 +559,29 @@ void piksi_vel_ned_callback(u_int16_t sender_id __attribute__((unused)), u_int8_
     gps_vel.h_accuracy = vel_ned.h_accuracy;
     gps_vel.v_accuracy = vel_ned.v_accuracy;
     gps_vel.n_satellites= vel_ned.n_sats;
-    gps_vel.time = vel_ned.tow;
-    xyz.x = (double)vel_ned.n* 1e-3;
-    xyz.y = (double)vel_ned.e* 1e-3;
-    xyz.z = (double)vel_ned.d* 1e-3;
-    gps_vel.data = &xyz;
-    gps.velocity = &gps_vel;
-    complete_gps_message();
+    gps_vel.timeofweek = vel_ned.tow;
+    gps_vel.data->x = (double)vel_ned.n* 1e-3;
+    gps_vel.data->y = (double)vel_ned.e* 1e-3;
+    gps_vel.data->z = (double)vel_ned.d* 1e-3;
+    //Check status
+    memcpy(&status, &vel_ned.flags, sizeof(piksi_baseline_status_t));
+    if (status.fix_status != old_status)
+    {
+        old_status = status.fix_status;
+        switch (status.fix_status) {
+        case PIKSI_STATUS_FIXED_RTK:
+            gps_pos.fixedrtk = PIKSI_STATUS_FIXED_RTK;
+            set_beaglebone_LED(LED_PATH_3,LED_ON);
+            break;
+        case PIKSI_STATUS_FLOAT:
+            gps_pos.fixedrtk = PIKSI_STATUS_FLOAT;
+            set_beaglebone_LED(LED_PATH_3,LED_OFF);
+            break;
+        default:
+            break;
+        }
+    }
+    sensors.gps_velocity = &gps_vel;
 }
 void piksi_dops_callback(u_int16_t sender_id __attribute__((unused)), u_int8_t len __attribute__((unused)), u8 msg[], void *context __attribute__((unused)))
 {
@@ -583,14 +596,7 @@ void piksi_gps_time_callback(u_int16_t sender_id __attribute__((unused)), u_int8
     printf("time (%d, %d, %d)\n", gps_time.wn, gps_time.tow, gps_time.ns);
 }
 
-void complete_gps_message(void)
-{
-    if (gps.velocity != NULL && gps.position != NULL)
-    {
-        get_protbetty_timestamp(gps.timestamp);
-        sensors.gps = &gps;
-    }
-}
+
 
 
 
