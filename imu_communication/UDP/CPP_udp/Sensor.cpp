@@ -11,6 +11,9 @@
 
 // Constructor
 Sensor::Sensor() {
+    accel.type = 1;
+    gyro.type = 2;
+    mag.type = 3;
 }
 
 // Destructor

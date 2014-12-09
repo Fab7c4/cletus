@@ -71,6 +71,8 @@ struct SensorValues {
     int16_t compX;
     int16_t compY;
     int16_t compZ;
+    // type: ACCEL -> 1; GYRO; -> 2; MAG -> 3
+    char type;
 }__attribute__((packed));
 //#pragma pack(0)
 
