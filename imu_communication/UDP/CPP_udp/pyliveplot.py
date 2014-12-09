@@ -18,32 +18,40 @@ y = pg.plot()
 y.setWindowTitle('live plot of acceleration in y')
 curveY = y.plot()
 
-dataX = [1]*1000
-windowX = [1]*50
-dataY = [1]*1000
-windowY = [1]*50
+z = pg.plot()
+z.setWindowTitle('live plot of acceleration in z')
+curveZ = z.plot()
 
+#dataAccel = [[1]*1000]*3
+dataAccel = [([1]*1000) for i in range(3)]
+#windowAccel = [[1]*50]*3
+windowAccel = [([1]*50) for i in range(3)]
 
 
 def update():
-    global curveX, curveY, dataX, dataY
-    raw = open('values.txt', 'rb')
+    global curveX, curveY, curveZ, dataX, dataY, dataZ
+    raw = open('accel.txt', 'rb')
     line = raw.readline()
     raw.close()
     line = line.split()
-    #print(line)
-    windowX.append(int(line[1]))
-    windowY.append(int(line[2]))
-    del windowX[0]
-    del windowY[0]
-    dataX.append(sum(windowX)/len(windowX))
-    dataY.append(sum(windowY)/len(windowY))
-    del dataX[0]
-    del dataY[0]
-    xdataX = np.array(dataX, dtype='int')
-    xdataY = np.array(dataY, dtype='int')
+    (windowAccel[0]).append(int(line[1]))
+    (windowAccel[1]).append(int(line[2]))
+    (windowAccel[2]).append(int(line[3]))
+    del windowAccel[0][0]
+    del windowAccel[1][0]
+    del windowAccel[2][0]
+    dataAccel[0].append(sum(windowAccel[0])/len(windowAccel[0]))
+    dataAccel[1].append(sum(windowAccel[1])/len(windowAccel[1]))
+    dataAccel[2].append(sum(windowAccel[2])/len(windowAccel[2]))
+    del dataAccel[0][0]
+    del dataAccel[1][0]
+    del dataAccel[2][0]
+    xdataX = np.array(dataAccel[0], dtype='int')
+    xdataY = np.array(dataAccel[1], dtype='int')
+    xdataZ = np.array(dataAccel[2], dtype='int')
     curveX.setData(xdataX)
     curveY.setData(xdataY)
+    curveZ.setData(xdataZ)
     app.processEvents()
 
 timer = QtCore.QTimer()
