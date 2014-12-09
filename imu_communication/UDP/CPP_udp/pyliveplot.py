@@ -10,30 +10,40 @@ import serial
 
 app = QtGui.QApplication([])
 
-p = pg.plot()
-p.setWindowTitle('live plot from serial')
-curve = p.plot()
+x = pg.plot()
+x.setWindowTitle('live plot of acceleration in x')
+curveX = x.plot()
 
-#with open('accel.txt', 'rb') as npfile:
-#    data = []
-#    data = np.loadtxt(npfile, delimiter=',')
-data = [1]*1000
-window = [1]*50
+y = pg.plot()
+y.setWindowTitle('live plot of acceleration in y')
+curveY = y.plot()
+
+dataX = [1]*1000
+windowX = [1]*50
+dataY = [1]*1000
+windowY = [1]*50
 
 
 
 def update():
-    global curve, data
-    raw = open('accel.txt', 'rb')
+    global curveX, curveY, dataX, dataY
+    raw = open('values.txt', 'rb')
     line = raw.readline()
     raw.close()
+    line = line.split()
     #print(line)
-    window.append(int(line))
-    del window[0]
-    data.append(sum(window)/len(window))
-    del data[0]
-    xdata = np.array(data, dtype='int')
-    curve.setData(xdata)
+    windowX.append(int(line[1]))
+    windowY.append(int(line[2]))
+    del windowX[0]
+    del windowY[0]
+    dataX.append(sum(windowX)/len(windowX))
+    dataY.append(sum(windowY)/len(windowY))
+    del dataX[0]
+    del dataY[0]
+    xdataX = np.array(dataX, dtype='int')
+    xdataY = np.array(dataY, dtype='int')
+    curveX.setData(xdataX)
+    curveY.setData(xdataY)
     app.processEvents()
 
 timer = QtCore.QTimer()
