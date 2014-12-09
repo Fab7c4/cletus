@@ -28,11 +28,13 @@ int main (int argc, char** argv) {
     for(int16_t i = 0;i < numOfSamples ; i++) {
         // Do the read operation
         my_sensor.getSensorValues(ACCEL_TYPE);
+        my_sensor.getSensorValues(GYRO_TYPE);
         // Do one send operation
         printf("compX: %i\n", my_sensor.accel.compX);
         printf("compY: %i\n", my_sensor.accel.compY);
         printf("compZ: %i\n", my_sensor.accel.compZ);
         my_udp.sendUDPstruct(&my_sensor.accel);
+        my_udp.sendUDPstruct(&my_sensor.gyro);
         //int16_t value = my_udp.receiveUDP();
         //printf("The received value is: %i\n", value);
         // Measure the interval between 2 samples
