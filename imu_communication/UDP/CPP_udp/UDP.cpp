@@ -52,8 +52,6 @@ void UDP::initUDP(const char* other_ip, unsigned short other_port, unsigned shor
 int16_t UDP::receiveUDP() {
     int16_t value = 0;
     // try to receive some data ( blocking! )
-    printf("Trying to receive message...");
-    fflush(stdout);
 
 
     if ((_recv_len = recvfrom(_udp_socket, &value, sizeof(value), 0, (struct sockaddr *)&_recv_addr, (socklen_t*)&_socketlen)) == -1) {
@@ -69,8 +67,6 @@ int16_t UDP::receiveUDP() {
 
 SensorValues* UDP::receiveUDPstruct() {
     // try to receive some data ( blocking! )
-    printf("Trying to receive message...");
-    fflush(stdout);
 
     if ((_recv_len = recvfrom(_udp_socket, &_values, sizeof(struct SensorValues), 0, (struct sockaddr *)&_recv_addr, (socklen_t*)&_socketlen)) == -1) {
         printf("Failed to receive udp data: %s\n", strerror(errno));
