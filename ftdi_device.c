@@ -86,7 +86,7 @@ int set_chunksize(ftdi_device ftdi, const unsigned int read_size, const unsigned
         fprintf(stderr, "Setting read chunksize to %u failed\n", read_size);
         return RETURN_ERROR;
     }
-    ret = ftdi_write_data_set_chunksize((ftdi_ptr)ftdi, read_size);
+    ret = ftdi_write_data_set_chunksize((ftdi_ptr)ftdi, write_size);
     ret = ftdi_write_data_get_chunksize((ftdi_ptr)ftdi, &check) ;
     if (check!= write_size)    {
         fprintf(stderr, "Setting write chunksize to %u failed\n", write_size);
