@@ -218,9 +218,9 @@ int main(int argc __attribute__((unused)),
     gps_pos.timestamp = &gps_pos_timestamp;
     protobetty__gps__init(&gps_vel);
     Protobetty__Xyz gps_vel_data = PROTOBETTY__XYZ__INIT;
-    gps_pos.data = &gps_vel_data;
+    gps_vel.data = &gps_vel_data;
     Protobetty__Timestamp gps_vel_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-    gps_pos.timestamp = &gps_vel_timestamp;
+    gps_vel.timestamp = &gps_vel_timestamp;
 #endif
     protobetty__log_message__init(&log_data);
     Protobetty__Servos servos = PROTOBETTY__SERVOS__INIT;
@@ -570,11 +570,11 @@ void piksi_vel_ned_callback(u_int16_t sender_id __attribute__((unused)), u_int8_
         old_status = status.fix_status;
         switch (status.fix_status) {
         case PIKSI_STATUS_FIXED_RTK:
-            gps_pos.fixedrtk = PIKSI_STATUS_FIXED_RTK;
+            gps_vel.fixedrtk = PIKSI_STATUS_FIXED_RTK;
             set_beaglebone_LED(LED_PATH_3,LED_ON);
             break;
         case PIKSI_STATUS_FLOAT:
-            gps_pos.fixedrtk = PIKSI_STATUS_FLOAT;
+            gps_vel.fixedrtk = PIKSI_STATUS_FLOAT;
             set_beaglebone_LED(LED_PATH_3,LED_OFF);
             break;
         default:
