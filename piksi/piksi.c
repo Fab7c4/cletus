@@ -10,7 +10,7 @@
 #include "../ftdi_device.h"
 #include "fifo.h"
 
-#define PIKSI_BAUDRATE 115200
+#define PIKSI_BAUDRATE 921600
 #define PIKSI_DEVICE 1
 #define PIKSI_BIT_TYPE 8
 #define PIKSI_PARITY 0
