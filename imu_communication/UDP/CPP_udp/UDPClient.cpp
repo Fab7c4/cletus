@@ -13,12 +13,10 @@
 
 int main (int argc, char** argv) {
     // Define number of samples
-    int numOfSamples = 2000;
+    int numOfSamples = 200000;
     // Declare and initialize the Sensordevice
-    SensorValues my_values;
-    my_values.compX = 1;
-    my_values.compY = 2;
-    my_values.compZ = 3;
+    Sensor my_sensor;
+    my_sensor.initI2C(ACCEL_GYRO_DEVICE, MAG_DEVICE);
     // Declare and initialize the UDP-Socket
     UDP my_udp;
     my_udp.initUDP(OTHER_IP, OTHER_PORT, OWN_PORT);
@@ -28,9 +26,15 @@ int main (int argc, char** argv) {
     gettimeofday(&startTime, 0);
     
     for(int16_t i = 0;i < numOfSamples ; i++) {
+        // Do the read operation
+        my_sensor.getSensorValues(ACCEL_TYPE);
+        my_sensor.getSensorValues(GYRO_TYPE);
         // Do one send operation
-        //my_udp.sendUDP(i);
-        my_udp.sendUDPstruct(&my_values);
+        printf("compX: %i\n", my_sensor.accel.compX);
+        printf("compY: %i\n", my_sensor.accel.compY);
+        printf("compZ: %i\n", my_sensor.accel.compZ);
+        my_udp.sendUDPstruct(&my_sensor.accel);
+        my_udp.sendUDPstruct(&my_sensor.gyro);
         //int16_t value = my_udp.receiveUDP();
         //printf("The received value is: %i\n", value);
         // Measure the interval between 2 samples

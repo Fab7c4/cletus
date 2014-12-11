@@ -66,13 +66,15 @@
  * spacial components of different Sensors
  * (accelerometer, gyrometer, magnetometer) 
  */
-#pragma pack(1)
+//#pragma pack(1)
 struct SensorValues {
     int16_t compX;
     int16_t compY;
     int16_t compZ;
-};
-#pragma pack(0)
+    // type: ACCEL -> 1; GYRO; -> 2; MAG -> 3
+    char type;
+}__attribute__((packed));
+//#pragma pack(0)
 
 /*
  * Class for reading/setting Registervalues of the 
