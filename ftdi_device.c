@@ -107,6 +107,9 @@ int set_latency_timer(ftdi_device ftdi, unsigned char latency_ms)
         fprintf(stderr, "Setting latency timer to %u ms failed\n", latency_ms);
         return RETURN_ERROR;
     }
+    ftdi_ptr ctxt = (ftdi_ptr) ftdi;
+    ctxt->usb_read_timeout = latency_ms;
+    ctxt->usb_write_timeout = latency_ms;
     return ret;
 }
 
