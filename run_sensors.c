@@ -268,20 +268,14 @@ int main(int argc __attribute__((unused)),
 
     lisa_flush_buffers();
     piksi_flush_buffers();
-   Protobetty__Timestamp tv_start = PROTOBETTY__TIMESTAMP__INIT;
 
     //When sensor data is in circular buffer
     while (1)
     {
         int retval = lisa_read_message(&bail);
-        double latency = calcCurrentLatencyProto(&tv_start);
-
-
         if (bail) die(bail);
         if (retval > 0)
         {
-            get_protbetty_timestamp(&tv_start);
-            printf("Latency = %f , %d, %d \n", latency, retval, buffer[LISA_INDEX_MSG_ID]);
             uint8_t msg_length = buffer[LISA_INDEX_MSG_LENGTH];
             if (bail) die(bail);
             //messages are never longer than 64 bytes
