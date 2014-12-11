@@ -10,9 +10,11 @@
 #define LISA_DEVICE 2
 #define LISA_BIT_TYPE 8
 #define LISA_PARITY 0
-#define LISA_LATENCY 2
+#define LISA_LATENCY 1
 #define LISA_READ_CHUNKSIZE 512
-#define LISA_WRITE_CHUNKSIZE 512
+#define LISA_WRITE_CHUNKSIZE 128
+
+
 
 
 int lisa_read_data(unsigned char *buff, int n);
@@ -109,6 +111,7 @@ void lisa_close_connection(void)
 int lisa_read_data(unsigned char *buff, int n){
     //printf("reading fifo thingy, length %d\n", n);
     return  read_data_from_device(lisa.ftdi, buff, n);
+
 
 }
 
