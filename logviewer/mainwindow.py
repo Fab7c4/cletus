@@ -290,9 +290,9 @@ def LoadLogFile(filename=None):
 		window.tab_gps_pos.position_plot.addLinePlot(x=[y.data.x for y in data.gps_position], y=[y.data.y for y in data.gps_position], z=[y.data.z for y in data.gps_position])
 		window.tab_gps_pos.status_plot.plot([y.timeOfWeek*1e-3 for y in data.gps_position], [y.fixedRTK for y in data.gps_position],clear=True)
 		window.tab_gps_pos.status_plot.plot([y.timeOfWeek*1e-3 for y in data.gps_velocity], [y.fixedRTK for y in data.gps_velocity], pen=pg.mkPen(Colors.DodgerBlue))
-		window.tab_gps_vel.plot_x.plot([y.timeOfWeek*1e-3 for y in data.gps_velocity], [y.data.x for y in data.gps_velocity],clear=True)
-		window.tab_gps_vel.plot_y.plot([y.timeOfWeek*1e-3 for y in data.gps_velocity], [y.data.y for y in data.gps_velocity],clear=True)
-		window.tab_gps_vel.plot_z.plot([y.timeOfWeek*1e-3 for y in data.gps_velocity], [y.data.z for y in data.gps_velocity],clear=True)
+		window.tab_gps_vel.plot_x.plot([y.timeOfWeek*1e-3 for y in data.gps_velocity], [y.data.x for y in data.gps_velocity],clear=True, pen=pg.mkPen(Colors.DodgerBlue))
+		window.tab_gps_vel.plot_y.plot([y.timeOfWeek*1e-3 for y in data.gps_velocity], [y.data.y for y in data.gps_velocity],clear=True, pen=pg.mkPen(Colors.LawnGreen))
+		window.tab_gps_vel.plot_z.plot([y.timeOfWeek*1e-3 for y in data.gps_velocity], [y.data.z for y in data.gps_velocity],clear=True, pen=pg.mkPen(Colors.OrangeRed))
 		data.getGoogleMap()
 
 		window.tab_map.load(QUrl("./mymap.html"))
