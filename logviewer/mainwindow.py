@@ -100,7 +100,7 @@ class StatisticsWidget(QWidget):
 		layout.addWidget(self.gps_pos,2,1,1,1)
 		layout.addWidget(self.gps_vel,3,1,1,1)
 		layout.addWidget(self.airspeed,4,1,1,1)
-		layout.addWidget(self.hist,1,2,3,1)
+		layout.addWidget(self.hist,1,2,4,1)
 		self.setLayout(layout)
 		pass
 
