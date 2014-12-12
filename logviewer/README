@@ -1,0 +1,17 @@
+#########
+README
+#########
+
+Install Pyside for Qt-Python bindings for GUI
+sudo pip install pyside
+
+Install PyQtGraph as plotting library
+sudo pip install pyqtgraph
+
+Make sure you have installed QT libraries and everything
+sudo apt-get install qt4-dev-tools qttools5-dev-tools 
+
+
+For running the logviewer:
+python mainwindow.py
+
