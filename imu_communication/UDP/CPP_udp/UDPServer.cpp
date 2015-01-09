@@ -18,34 +18,34 @@ int main (int argc, char** argv) {
     UDP my_udp;
     my_udp.initUDP(OTHER_IP, OTHER_PORT, OWN_PORT);
     // Define file which is written to
-    FILE * pFile;
-    pFile = fopen("values.txt","w+");
+    FILE * accelFile;
+    accelFile = fopen("accel.txt","w+");
+    FILE * gyroFile;
+    gyroFile = fopen("gyro.txt","w+");
 
     // Variables for time measurement
     timeval startTime, endTime;
     float neededSeconds;
     // Start time measure
     gettimeofday(&startTime, 0); 
-    for(int i = 0;i < numOfSamples ; i++) {
+    // Declare structpointer to the received values
+    SensorValues *my_values;
+    for(int i = 0;i < numOfSamples ; ) {
         // Do one receive operation
-        SensorValues *my_values = my_udp.receiveUDPstruct();
+        my_values = my_udp.receiveUDPstruct();
+        // Get the time when value arrived
         gettimeofday(&endTime, 0);
         neededSeconds = (endTime.tv_sec - startTime.tv_sec)
                               + 0.000001 * (endTime.tv_usec - startTime.tv_usec);
-        //printf("%f, %i, %i, %i\n", neededSeconds, my_values->compX, my_values->compY, my_values->compZ);
-        rewind(pFile);
-        fprintf(pFile,"%f %i %i %i\n", neededSeconds, my_values->compX, my_values->compY, my_values->compZ);
-
-        // Measure the interval between 2 samples
-        //gettimeofday(&endTime, 0);
-        //float neededSeconds = (endTime.tv_sec - startTime.tv_sec) + 0.000001 * (endTime.tv_usec - startTime.tv_usec);
+        // Overwrite the value in the file
+        if (my_values->type == 1) {
+            rewind(accelFile);
+            fprintf(accelFile,"%f %i %i %i\n", neededSeconds, my_values->compX, my_values->compY, my_values->compZ);
+        } else if (my_values->type == 2) {
+            rewind(gyroFile);
+            fprintf(gyroFile,"%f %i %i %i\n", neededSeconds, my_values->compX, my_values->compY, my_values->compZ);
+        }
 
     }
-    // Stop time measurement
-    gettimeofday(&endTime, 0);
-    neededSeconds = (endTime.tv_sec - startTime.tv_sec)
-                  + 0.000001 * (endTime.tv_usec - startTime.tv_usec);
-    //std::cout << "Number of samples: " << numOfSamples << "\tTime needed: " << neededSeconds << " s" << std::endl;
-    //std::cout << "Average per sample: " << 1000*neededSeconds/numOfSamples << " ms" << std::endl;
     return 0;
 }
