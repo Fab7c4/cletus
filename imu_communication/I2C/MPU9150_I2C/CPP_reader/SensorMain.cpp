@@ -24,7 +24,7 @@ int main (int argc, char** argv) {
         // Measure the interval between 2 samples
         gettimeofday(&endTime, 0);
         float neededSeconds = (endTime.tv_sec - startTime.tv_sec) + 0.000001 * (endTime.tv_usec - startTime.tv_usec);
-        printf("%f;%i;%i;%i\n", neededSeconds, sensorvalues->compX, sensorvalues->compY, sensorvalues->compZ);
+        //printf("%f;%i;%i;%i\n", neededSeconds, sensorvalues->compX, sensorvalues->compY, sensorvalues->compZ);
 
         /*
         // Read data from Accelerometer
