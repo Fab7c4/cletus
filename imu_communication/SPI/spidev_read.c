@@ -4,15 +4,17 @@
  *
  */
 
-#include <stdint.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+
+
+#include<errno.h>
+#include<string.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<getopt.h>
+#include<sys/ioctl.h>
+#include<sys/stat.h>
 #include <getopt.h>
 #include <fcntl.h>
-#include <sys/ioctl.h>
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 #include "./spidev_read.h"
@@ -30,6 +32,12 @@ static uint16_t _delay;
 static int _fd;
 // error handling 
 static int err;
+
+
+void set_mode(uint8_t mode);
+void set_num_bits(uint8_t bits);
+void set_speed(uint32_t speed);
+void set_device(char *device);
 
 // Transfers data on MISO(rx) and MOSI(tx)
 void transfer(uint8_t *tx, uint8_t send_size)
@@ -111,7 +119,7 @@ void set_device(char *device) {
 }
 
 
-void init_spi(int argc, char *argv[]) {
+void init_spi(void) {
 
 	_fd=open(_device, O_RDONLY);
     if (_fd < 0)
@@ -130,11 +138,11 @@ void init_spi(int argc, char *argv[]) {
 		pabort("can't set max speed hz");
 }
 
-void close_spi() {
+void close_spi(void) {
 	close(_fd);
 }
 
-static void pabort(const char *s)
+void pabort(const char *s)
 {
 	printf("%s",s);
     printf("\n%s\n", strerror(errno));
