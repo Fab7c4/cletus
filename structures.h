@@ -95,6 +95,17 @@ typedef struct __attribute__((packed))
     xyz_int mag;
 }imu_all_raw_t;
 
+
+typedef struct __attribute__((packed))
+{
+    uint32_t sequence_number;
+    xyz_int accel;
+    xyz_int gyro;
+    xyz_int mag;
+    airspeed_t airspeed;
+    message_footer_t checksums;
+}sensors_spi_t;
+
 typedef struct __attribute__((packed)){
     lisa_header_t header;
     quaternion_t imu;
