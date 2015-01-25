@@ -22,6 +22,7 @@
 
 #include "./lisa_messages.h"
 #include "./print_output.h"
+#include "./imu_communication/SPI/spidev_read.h"
 
 #include "./protos_c/messages.pb-c.h"
 
@@ -31,7 +32,7 @@
 //#define DEBUG
 #ifdef ALL
 #define IMU
-#define RC
+//#define RC
 #define AHRS
 #define AIRSPEED
 #define GPS
@@ -49,6 +50,7 @@ void piksi_vel_ned_callback(u_int16_t sender_id __attribute__((unused)), u_int8_
 void piksi_dops_callback(u_int16_t sender_id __attribute__((unused)), u_int8_t len __attribute__((unused)), u8 msg[], void *context __attribute__((unused)));
 void piksi_gps_time_callback(u_int16_t sender_id __attribute__((unused)), u_int8_t len __attribute__((unused)), u8 msg[], void *context __attribute__((unused)));
 void complete_gps_message(void);
+static bool check_spi_checksum(uint8_t* buffer, uint16_t length);
 
 
 const double gyro_scale_unit_coef = 0.0139882;
@@ -79,12 +81,7 @@ static void __attribute__((noreturn)) die(int code) {
     zdestroy(zsock_log, NULL);
     zdestroy(zsock_sensors, NULL);
     zdestroy(zsock_print, NULL);
-
-
-    lisa_close_connection();
-    piksi_close_connection();
-
-
+    
     printf("%d TX fails; %d RX fails.\n", txfails, rxfails);
     printf("Moriturus te saluto!\n");
     exit(code);
@@ -99,7 +96,7 @@ static void sigdie(int signum) {
 
 int main(int argc __attribute__((unused)),
          char **argv __attribute__((unused))) {
-
+    
     struct timespec t;
     struct sched_param param;
     int rt_interval= 0;
@@ -111,11 +108,11 @@ int main(int argc __attribute__((unused)),
         if (*arg_ptr != '\0' || priority > INT_MAX) {
             printf("Failed to read passed priority. Using DEFAULT value instead.\n");
             priority = DEFAULT_RT_PRIORITY;
-
+            
         }
         printf("Setting priority to %li\n", priority);
         set_priority(&param, priority);
-
+        
         long frequency = strtol(argv[2], &arg_ptr,10);
         if (*arg_ptr != '\0' || frequency > INT_MAX) {
             printf("Failed to read passed frequency. Using DEFAULT value instead.\n");
@@ -132,11 +129,11 @@ int main(int argc __attribute__((unused)),
         rt_interval = (NSEC_PER_SEC/DEFAULT_RT_FREQUENCY);
     }
     stack_prefault();
-
-
-
-
-
+    
+    
+    
+    
+    
     /* Confignals. */
     if (signal(SIGINT, &sigdie) == SIG_IGN)
         signal(SIGINT, SIG_IGN);
@@ -146,11 +143,11 @@ int main(int argc __attribute__((unused)),
         signal(SIGHUP, SIG_IGN);
     if (signal(SIGABRT, &sigdie) == SIG_IGN)
         signal(SIGABRT, SIG_IGN);
-
-
-
+    
+    
+    
     /* ZMQ setup first. */
-
+    
     /* Set a low high-water mark (a short queue length, measured in
    * messages) so that a sending PUSH will block if the receiving PULL
    * isn't reading.  In the case of PUB/SUB, we still want a short
@@ -171,10 +168,10 @@ int main(int argc __attribute__((unused)),
     zsock_log = setup_zmq_sender(LOG_CHAN, &zctx, ZMQ_PUSH, 100, 500);
     if (NULL == zsock_log)
         die(1);
-
-
-
-
+    
+    
+    
+    
     /*******************************************
  *PROTOBUF-C INITIALIZATION
  *Memory for submessages is allocated here.
@@ -223,24 +220,26 @@ int main(int argc __attribute__((unused)),
     gps_vel.timestamp = &gps_vel_timestamp;
 #endif
     protobetty__log_message__init(&log_data);
+#ifdef SERVOS
     Protobetty__Servos servos = PROTOBETTY__SERVOS__INIT;
     Protobetty__Timestamp servo_timestamp = PROTOBETTY__TIMESTAMP__INIT;
     servos.direction = PROTOBETTY__SERVOS__DIRECTION__LISA2BONE;
     servos.timestamp = &servo_timestamp;
-
-
-
-
+#endif
+    
+    
+    
+    
     uint8_t* zmq_buffer = calloc(sizeof(uint8_t),PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
     unsigned int packed_length;
-
-
+    
+    
     clock_gettime(CLOCK_MONOTONIC ,&t);
     /* start after one second */
     t.tv_sec++;
-
+    
     /* const int noutputs = npolls - ninputs; */
-
+    
     /* Here's the main loop -- we only do stuff when input or output
    * happens.  The timeout can be put to good use, or you can also use
    * timerfd_create() to create a file descriptor with a timer under
@@ -251,31 +250,36 @@ int main(int argc __attribute__((unused)),
    * and simply loop over your polls; I've left it all inline here
    * mostly out of laziness. */
     if (bail) die(bail);
-
+    
     //Init LISA
     uint8_t buffer[PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE];
-    lisa_open_connection();
-    lisa_init_message_processing(&buffer[0]);
-
-    //Init Piksi
-    piksi_open_connection();
-    piksi_init_message_processing(PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
-    piksi_register_velocity_ned_callback(&piksi_vel_ned_callback);
-    piksi_register_baseline_ned_callback(&piksi_baseline_ned_callback);
-    piksi_register_position_llh_callback(&piksi_pos_llh_callback);
-
-
-
-    lisa_flush_buffers();
-    piksi_flush_buffers();
-
+    
+    init_spi();
+       
     //When sensor data is in circular buffer
     while (1)
     {
-        int retval = lisa_read_message(&bail);
+        /* wait until next shot */
+        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t, NULL);
+        int retval = receive(buffer, sizeof(sensors_spi_t));
         if (bail) die(bail);
         if (retval > 0)
         {
+            if (check_spi_checksum(buffer, sizeof(sensors_spi_t)))
+            {
+                sensors_spi_t* sensor_data =(sensors_spi_t*) buffer;
+                get_protbetty_timestamp(imu.timestamp);
+                scaled_to_protobuf(&(sensor_data->accel), imu.accel, acc_scale_unit_coef);
+                scaled_to_protobuf(&(sensor_data->gyro), imu.gyro, gyro_scale_unit_coef);
+                scaled_to_protobuf(&(sensor_data->mag), imu.mag, mag_scale_unit_coef);
+                sensors.imu = &imu;
+                get_protbetty_timestamp(airspeed.timestamp);
+                airspeed.scaled = sensor_data->airspeed.scaled;
+                airspeed.raw = sensor_data->airspeed.adc;
+                airspeed.offset = sensor_data->airspeed.offset;
+                sensors.airspeed = &airspeed;
+
+#ifdef UNUSED
             uint8_t msg_length = buffer[LISA_INDEX_MSG_LENGTH];
             if (bail) die(bail);
             //messages are never longer than 64 bytes
@@ -310,7 +314,7 @@ int main(int argc __attribute__((unused)),
                                        imu.mag->x, imu.mag->y, imu.mag->z);
                             break;
                         }
-#ifdef UNUSED
+
                         case IMU_ACCEL_SCALED:
                         {
                             const imu_raw_t* data_ptr = (imu_raw_t*)&buffer[LISA_INDEX_MSG_LENGTH];
@@ -350,7 +354,6 @@ int main(int argc __attribute__((unused)),
                                        mag.data->x, mag.data->y, mag.data->z);
                             break;
                         }
-#endif
                         case AIRSPEED_ETS:
                         {
                             const airspeed_t* data_ptr = (airspeed_t*)&buffer[LISA_INDEX_MSG_LENGTH];
@@ -396,6 +399,8 @@ int main(int argc __attribute__((unused)),
                         default:
                             break;
                         }
+#endif
+
                     }
                     else
                     {
@@ -405,18 +410,8 @@ int main(int argc __attribute__((unused)),
                 else
                 {
                     send_warning(zsock_print,TAG,"ERROR wrong SENDER ID %i\n",buffer[LISA_INDEX_SENDER_ID]);
-                }
-            }
-        }
-
-
-        //Get piksi messages
-        piksi_read_message(&bail);
-
-
-
-
-
+                }            
+        
         //********************************************
         // SENDING IMU DATA to Controller
         //********************************************
@@ -465,8 +460,10 @@ int main(int argc __attribute__((unused)),
             protobetty__sensors__init(&sensors);
             protobetty__log_message__init(&log_data);
         }
-    }
+        calc_next_shot(&t,rt_interval);
 
+    }
+    
     /* Shouldn't get here. */
     return 0;
 }
@@ -594,6 +591,23 @@ void piksi_gps_time_callback(u_int16_t sender_id __attribute__((unused)), u_int8
     static piksi_time_t gps_time;
     gps_time = *(piksi_time_t *)msg;
     printf("time (%d, %d, %d)\n", gps_time.wn, gps_time.tow, gps_time.ns);
+}
+
+static bool check_spi_checksum(uint8_t* buffer, uint16_t length)
+{
+    uint8_t c1 =0;
+    uint8_t c2 =0;
+
+    for (int i = 0 ; i < length-2 ; i++)
+    {
+        c1 += buffer[i];
+        c2 += c1;
+    }
+    sensors_spi_t* data = (sensors_spi_t*) buffer;
+    if (data->checksums.checksum1 == c1 && data->checksums.checksum2 == c2)
+        return true;
+    else
+        return false;
 }
 
 
