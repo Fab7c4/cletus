@@ -27,7 +27,7 @@
 /// default byte length length
 #define DEFAULT_WORD_LENGTH 8
 /// default clock speed in Hz
-#define DEFAULT_CLOCK_RATE 500000
+#define DEFAULT_CLOCK_RATE 24000000
 // error handling 
 static int err;
 
@@ -62,6 +62,8 @@ int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint8_t receive_size)
 {
     memset(rx, 0, receive_size);
 
+printf("SPI wants receive %i \n", receive_size);
+
     device->spi_transfer->tx_buf =0;
     device->spi_transfer->len = receive_size;
     device->spi_transfer->rx_buf =(unsigned long) rx;
@@ -73,7 +75,12 @@ int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint8_t receive_size)
         pabort("error in transmitting SPI-message.");
     if (err < 1)
         pabort("nothing received.");
-
+const int maxwidth = 3;
+for(int i = 0; i < receive_size; i++)
+{
+	printf(" %*d ",maxwidth , rx[i]);
+}
+printf("\n");
     return err;
 }
 
