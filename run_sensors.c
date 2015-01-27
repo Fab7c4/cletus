@@ -65,6 +65,8 @@ static void __attribute__((noreturn)) die(int code) {
     zdestroy(zsock_sensors, NULL);
     zdestroy(zsock_print, NULL);
     
+lisa_close();
+
     printf("%d TX fails; %d RX fails.\n", txfails, rxfails);
     printf("Moriturus te saluto!\n");
     exit(code);
@@ -239,11 +241,13 @@ int main(int argc __attribute__((unused)),
     while (1)
     {
         int retval = epoll_wait(epoll,pevents,1,500);
-        if (bail) die(bail);
+        printf("Epoll returned %i \n", retval);
+	if (bail) die(bail);
         if (retval > 0)
         {
             if ( pevents[0].events & EPOLLIN )
             {
+		printf("Lisa event... \n");
                 retval = lisa_read_message();
                 if (retval > 0)
                 {
