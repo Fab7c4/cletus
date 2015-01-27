@@ -72,7 +72,6 @@ typedef struct __attribute__((packed))
 
 typedef struct __attribute__((packed))
 {
-    lisa_header_t header;
     uint16_t adc;
     uint16_t offset;
     float scaled;
