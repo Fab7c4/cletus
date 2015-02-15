@@ -17,13 +17,14 @@
 #include<sys/stat.h>
 #include<linux/spi/spidev.h> 
 #include<fcntl.h>
+#include <inttypes.h>
 
 #define MAX_BUFFER_SIZE 255
-
+#define bool int
 
 /// Available SPI devices on BBB
 // default device :spidev1.0 --> SPI0 on BBB
-#define DEVICE_SPI1 "/dev/spidev1.0";
+#define DEVICE_SPI1 "/dev/spidev1.0"
 
 typedef struct spi_ioc_transfer spi_ioc_transfer_t;
 
@@ -37,8 +38,15 @@ typedef struct {
 int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint8_t receive_size);
 void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint8_t send_size);
 spi_device_t* spi_comm_init(const char *device, bool read_only);
-void spi_comm_close(const spi_device_t* device);
-static void pabort(const char *s);
+void spi_comm_close(spi_device_t* device);
+
+
+void spi_comm_set_clock_mode(spi_device_t* spi, int mode);
+void spi_comm_set_word_length(spi_device_t* spi, int length);
+void spi_comm_set_max_clock_rate(spi_device_t* spi, int rate);
+
+
+void pabort(const char *s);
 
 
 

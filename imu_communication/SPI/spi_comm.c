@@ -23,11 +23,11 @@
 ///DEFINING DEFAULT OPTIONS FOR SPI DEVICE
 
 /// default mode = 3(1,1) --> Clock Idle = High, Clock Phase = Falling Edge
-#define DEFAULT_MODE 3;
+#define DEFAULT_MODE 3
 /// default byte length length
-#define DEFAULT_WORD_LENGTH 8;
+#define DEFAULT_WORD_LENGTH 8
 /// default clock speed in Hz
-#define DEFAULT_CLOCK_RATE 500000;
+#define DEFAULT_CLOCK_RATE 500000
 // error handling 
 static int err;
 
@@ -37,9 +37,9 @@ static int err;
 // Transfers data on MISO(rx) and MOSI(tx)
 void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint8_t send_size)
 {
-    device->spi_transfer->rx_buf = NULL;
+    device->spi_transfer->rx_buf = 0;
     device->spi_transfer->len = send_size;
-    device->spi_transfer->tx_buf = tx;
+    device->spi_transfer->tx_buf =(unsigned long) tx;
     device->spi_transfer->delay_usecs = 0;
 
 
@@ -52,7 +52,7 @@ void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint8_t send_size)
     for (i = 0; i < send_size; i++) {
         if (!(i % 6))
             puts("");
-        printf("%i ", rx[i]);
+        printf("%i ", tx[i]);
     }
     puts("");
 }
@@ -61,11 +61,10 @@ void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint8_t send_size)
 int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint8_t receive_size)
 {
     memset(rx, 0, receive_size);
-    uint8_t tx[MAX_BUFFER_SIZE] = {0, };
 
-    device->spi_transfer->tx_buf = NULL;
+    device->spi_transfer->tx_buf =0;
     device->spi_transfer->len = receive_size;
-    device->spi_transfer->rx_buf = rx;
+    device->spi_transfer->rx_buf =(unsigned long) rx;
     device->spi_transfer->delay_usecs = 0;
 
 
@@ -129,13 +128,13 @@ void spi_comm_set_max_clock_rate(spi_device_t* spi, int rate)
 }
 
 
-void spi_comm_close(const spi_device_t *device) {
+void spi_comm_close(spi_device_t *device) {
     free(device->spi_transfer);
     close(device->fd);
     free(device);
 }
 
-static void pabort(const char *s)
+void pabort(const char *s)
 {
     printf("%s",s);
     printf("\n%s\n", strerror(errno));
