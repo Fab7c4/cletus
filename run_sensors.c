@@ -22,7 +22,7 @@
 
 #include "./lisa_messages.h"
 #include "./print_output.h"
-#include "./imu_communication/SPI/spidev_read.h"
+#include "./imu_communication/SPI/spi_comm.h"
 
 #include "./protos_c/messages.pb-c.h"
 
@@ -254,14 +254,14 @@ int main(int argc __attribute__((unused)),
     //Init LISA
     uint8_t buffer[PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE];
     
-    init_spi();
+    spi_device_t* spi = spi_comm_init(DEVICE_SPI1, true);
        
     //When sensor data is in circular buffer
     while (1)
     {
         /* wait until next shot */
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t, NULL);
-        int retval = receive(buffer, sizeof(sensors_spi_t));
+        int retval = spi_comm_receive(spi,buffer, sizeof(sensors_spi_t));
         if (bail) die(bail);
         if (retval > 0)
         {

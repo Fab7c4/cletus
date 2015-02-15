@@ -27,7 +27,7 @@ C_SRC = run_uart.c \
         piksi/fifo.c \
         ftdi_device.c \
         lisa.c\
-        imu_communication/SPI/spidev_read.c
+        imu_communication/SPI/spi_comm.c
 
 
 
