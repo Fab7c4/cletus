@@ -78,7 +78,7 @@ int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint8_t receive_size)
 }
 
 
-spi_device_t* spi_comm_init(const char *device, bool read_only)
+spi_device_t* spi_comm_init(const char *device, bool_t read_only)
 {
     spi_device_t* device_ptr = malloc(sizeof(spi_device_t));
     device_ptr->spi_transfer = malloc(sizeof(spi_ioc_transfer_t));

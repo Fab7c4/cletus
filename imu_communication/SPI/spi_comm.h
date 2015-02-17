@@ -20,7 +20,7 @@
 #include <inttypes.h>
 
 #define MAX_BUFFER_SIZE 255
-#define bool int
+#define bool_t int
 
 /// Available SPI devices on BBB
 // default device :spidev1.0 --> SPI0 on BBB
@@ -37,7 +37,7 @@ typedef struct {
 
 int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint8_t receive_size);
 void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint8_t send_size);
-spi_device_t* spi_comm_init(const char *device, bool read_only);
+spi_device_t* spi_comm_init(const char *device, bool_t read_only);
 void spi_comm_close(spi_device_t* device);
 
 
