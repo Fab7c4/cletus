@@ -93,7 +93,7 @@ int main(int argc __attribute__((unused)),
         long Kp = strtol(argv[4], &arg_ptr,10);
         if (*arg_ptr != '\0' || Kp > INT_MAX) {
             printf("Failed to read passed frequency. Using DEFAULT value instead.\n");
-            Kd = 950;
+            Kp = 950;
         }
         long Kdp = strtol(argv[5], &arg_ptr,10);
         if (*arg_ptr != '\0' || Kp > INT_MAX) {
