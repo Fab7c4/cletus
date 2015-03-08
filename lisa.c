@@ -1,184 +1,180 @@
 #include "lisa.h"
-#include "ftdi_device.h"
 #include "lisa_messages.h"
+#include "./communication/spi/spi_comm.h"
+#include "./communication/gpio/gpio.h"
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/epoll.h>
 
 
-#define LISA_BAUDRATE 921600
-#define LISA_DEVICE 2
-#define LISA_BIT_TYPE 8
-#define LISA_PARITY 0
-#define LISA_LATENCY 1
-#define LISA_READ_CHUNKSIZE 512
-#define LISA_WRITE_CHUNKSIZE 128
+#define DEFAULT_LISA_GPIO_PIN 25
 
 
+static int lisa_spi_init(void);
+static int lisa_gpio_init(void);
+static int lisa_check_message_checksum(uint8_t* buffer, uint16_t length);
 
 
-int lisa_read_data(unsigned char *buff, int n);
-int lisa_process_message(int (*read)(unsigned char *buff, int n));
-
-
-enum LISA_MSG_STATES{
-    STARTBYTE = 1,
-    MSG_LENGTH = 2,
-    MSG_DATA = 3
-};
-
-
-enum LISA_RETURNS{
-    WAITING = 0,
-    MORE_DATA = 1,
-    COMPLETE = 2,
-    ERROR = -1
-};
 
 typedef struct {
-    int read_state;
     int n_read;
-    int msg_length;
+    int n_failed;
 } lisa_state_t;
+
+typedef struct {
+    int fd;
+    epoll_event_t* event_ptr;
+} gpio_t;
 
 
 typedef struct {
     lisa_state_t* state;
-    ftdi_device ftdi;
+    spi_device_t* spi;
+    gpio_t* gpio;
     unsigned char* buffer;
 } lisa_t;
 
 
 lisa_t lisa;
 
-int lisa_init_message_processing(unsigned char* buffer)
+int lisa_init(unsigned char* buffer)
 {
-    lisa.buffer = buffer;
+    int retval;
     lisa.state = malloc(sizeof(lisa_state_t));
-    if (lisa.state == NULL)
+
+    retval = lisa_spi_init();
+    retval = lisa_gpio_init();
+
+    lisa.buffer = buffer;
+    if (lisa.buffer == NULL)
+    {
+        printf("Error setting buffer for lisa!\n");
         return -1;
-    lisa.state->n_read = 0;
-    lisa.state->read_state = STARTBYTE;
-    lisa.state->msg_length = 0;
-    return  0;
+    }
+    return retval;
+
 }
 
-
-int lisa_flush_buffers(void)
+static int lisa_spi_init(void)
 {
-    return flush_device(lisa.ftdi, BOTH);
+    lisa.spi = spi_comm_init(SPI_COMM_DEVICE_SPI1, 1);
+    if (lisa.spi == NULL)
+    {
+        printf("Error initializing SPI port for lisa!\n");
+        return -1;
+    }
+    return 1;
 }
 
-
-
-int lisa_open_connection(void)
+static int lisa_gpio_init(void)
 {
-    int ret = 0;
-    open_device(&lisa.ftdi,LISA_DEVICE, LISA_BAUDRATE, LISA_BIT_TYPE, LISA_PARITY);
-    if (ret < 0 || lisa.ftdi == NULL)
+    int retval;
+    lisa.gpio = malloc(sizeof(gpio_t));
+    retval = gpio_export(DEFAULT_LISA_GPIO_PIN);
+    if (retval < 0 )
     {
-        printf("Error opening LISA device\n");
-        return ret;
+        printf("Error exprting GPIO pin %i for lisa!\n", DEFAULT_LISA_GPIO_PIN);
+        return -1;
     }
-    ret = set_chunksize(lisa.ftdi, LISA_READ_CHUNKSIZE, LISA_WRITE_CHUNKSIZE);
-    if (ret < 0)
+    retval = gpio_set_dir(DEFAULT_LISA_GPIO_PIN, INPUT_PIN);
+    if (retval < 0 )
     {
-        printf("Error setting LISA chunksize\n");
-        return ret;
+        printf("Error setting direction for GPIO pin %i for lisa!\n", DEFAULT_LISA_GPIO_PIN);
+        return -1;
     }
-    ret = set_latency_timer(lisa.ftdi, LISA_LATENCY);
-    if (ret < 0)
+    retval = gpio_set_edge(DEFAULT_LISA_GPIO_PIN, "rising");
+    if (retval < 0 )
     {
-        printf("Error setting LISA latency");
-        return ret;
+        printf("Error setting edge for GPIO pin %i for lisa!\n", DEFAULT_LISA_GPIO_PIN);
+        return -1;
     }
-    flush_device(lisa.ftdi, BOTH);
-    return ret;
+    lisa.gpio->fd = gpio_fd_open(DEFAULT_LISA_GPIO_PIN);
+    if (retval < 0 )
+    {
+        printf("Error opening file descriptor for GPIO pin %i for lisa!\n", DEFAULT_LISA_GPIO_PIN);
+        return -1;
+    }
+    return retval;
 }
 
-
-void lisa_close_connection(void)
+int lisa_get_gpio_fd(void)
 {
-    int ret = close_device(lisa.ftdi);
-    if (ret < 0 )
-    {
-        printf ("Error closing PIKSI device\n");
-    }
-
+    return lisa.gpio->fd;
 }
 
-
-int lisa_read_data(unsigned char *buff, int n){
-    //printf("reading fifo thingy, length %d\n", n);
-    return  read_data_from_device(lisa.ftdi, buff, n);
-
-
-}
-
-int lisa_process_message(int (*read)(unsigned char *buff, int n))
+epoll_event_t* lisa_get_epoll_event(void)
 {
-    switch(lisa.state->read_state)
+    epoll_event_t* event = malloc(sizeof(epoll_event_t));
+    if (event  == NULL )
     {
-    case STARTBYTE:
-        if ((*read)(lisa.buffer, 1) == 1)
-        {
-            if (lisa.buffer[0] == LISA_STARTBYTE) {
-                lisa.state->n_read = 1;
-                lisa.state->read_state = MSG_LENGTH;
-                return MORE_DATA;
-            }
-        }
-        return WAITING;
-        break;
-    case MSG_LENGTH:
-        lisa.state->n_read += (*read)(&lisa.buffer[LISA_INDEX_MSG_LENGTH], 1);
-        if (lisa.state->n_read == 2)
-        {
-           lisa.state->msg_length = lisa.buffer[LISA_INDEX_MSG_LENGTH];
-           lisa.state->read_state = MSG_DATA;
-           return MORE_DATA;
-        }
-        return WAITING;
-        break;
-    case MSG_DATA:
-        lisa.state->n_read += (*read)(&lisa.buffer[LISA_INDEX_SENDER_ID],lisa.state->msg_length-lisa.state->n_read);
-        if (lisa.state->n_read == lisa.state->msg_length)
-        {
-            lisa.state->read_state = STARTBYTE;
-            //printf("Read message %d of %d", lisa.state->n_read, lisa.state->msg_length);
-            return COMPLETE;
-        }
-        else if (lisa.state->n_read <  lisa.state->msg_length)
-        {
-            return MORE_DATA;
-        }
-        else
-        {
-            lisa.state->read_state = STARTBYTE;
-            return ERROR;
-        }
-        break;
-
-    default:
-        printf("ERROR unknown message state LISA\n");
-        break;
+        printf("Error creating epoll event for GPIO pin %i for lisa!\n", DEFAULT_LISA_GPIO_PIN);
+        return NULL;
     }
-    return ERROR;
+    event->events = EPOLLIN | EPOLLET;
+    event->data.fd = lisa.gpio->fd;
+    lisa.gpio->event_ptr = event;
+    return lisa.gpio->event_ptr;
+}
 
+void lisa_close(void)
+{
+    spi_comm_close(lisa.spi);
+    gpio_fd_close(lisa.gpio->fd);
+    gpio_unexport(DEFAULT_LISA_GPIO_PIN);
+    free(lisa.gpio);
+    free(lisa.state);
 
 }
 
-int lisa_read_message(int* exit)
+
+int lisa_read_message(void)
 {
     int ret;
-    do {
-        ret = lisa_process_message(&lisa_read_data);
-    //    printf("retval %d exit %d\n", ret, *exit);
-        if (*exit) return ERROR;
-    } while (ret == MORE_DATA);
-    //printf("Message read!\n");
-    return ret;
+    ret = spi_comm_receive(lisa.spi, lisa.buffer, sizeof(sensors_spi_t));
+    if (ret < 0)
+    {
+        lisa.state->n_failed++;
+        printf("Error receiving data from SPI port!\n");
+        return ERROR_COMMUNICATION;
+    }
+    ret = lisa_check_message_checksum(lisa.buffer,sizeof(sensors_spi_t));
+    if (ret < 0)
+    {
+        lisa.state->n_failed++;
+        printf("Error prooving checksum for message!\n");
+        return ERROR_CHECKSUM;
+    }
+    return COMPLETE;
 }
+
+sensors_spi_t* lisa_get_message_data(void)
+{
+    return (sensors_spi_t*) lisa.buffer;
+}
+
+
+static int lisa_check_message_checksum(uint8_t* buffer, uint16_t length)
+{
+    uint8_t c1 =0;
+    uint8_t c2 =0;
+
+    for (int i = 0 ; i < length-2 ; i++)
+    {
+        c1 += buffer[i];
+        c2 += c1;
+    }
+    sensors_spi_t* data = (sensors_spi_t*) buffer;
+    if (data->checksums.checksum1 == c1 && data->checksums.checksum2 == c2)
+        return 1;
+    else
+        return ERROR_CHECKSUM;
+}
+
 
 
 
