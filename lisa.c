@@ -12,7 +12,7 @@
 #include <sys/epoll.h>
 
 
-#define DEFAULT_LISA_GPIO_PIN 25
+#define DEFAULT_LISA_GPIO_PIN 14
 
 
 static int lisa_spi_init(void);
