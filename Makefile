@@ -1,5 +1,5 @@
 # What's the executable called?
-PROJ =  run_uart run_sensors run_controller run_actuators run_function_test tests/test_uart tests/test_lisa_message tests/log_lisa sim_uart run_print_output run_logger tests/test_ftdi
+PROJ =  run_uart run_sensors run_controller run_actuators run_function_test sim_uart run_print_output run_logger
 
 
 
@@ -17,15 +17,8 @@ C_SRC = run_uart.c \
 	misc.c \
 	zmq.c \
 	run_function_test.c \
-	tests/test_uart.c   \
-	tests/test_lisa_message.c \
-	tests/log_lisa.c \
-        tests/test_ftdi.c \
 	sim_uart.c \
 	run_logger.c \
-        piksi/piksi.c \
-        piksi/fifo.c \
-        ftdi_device.c \
         lisa.c\
         communication/spi/spi_comm.c\
         communication/gpio/gpio.c

@@ -12,7 +12,7 @@
 #include <sys/epoll.h>
 
 
-#define DEFAULT_LISA_GPIO_PIN 25
+#define DEFAULT_LISA_GPIO_PIN 14
 
 
 static int lisa_spi_init(void);
@@ -140,15 +140,23 @@ int lisa_read_message(void)
     {
         lisa.state->n_failed++;
         printf("Error receiving data from SPI port!\n");
-        return ERROR_COMMUNICATION;
+	return ERROR_COMMUNICATION;
     }
     ret = lisa_check_message_checksum(lisa.buffer,sizeof(sensors_spi_t));
     if (ret < 0)
     {
         lisa.state->n_failed++;
+        for (unsigned int i = 0; i < sizeof(sensors_spi_t); i++)
+	{
+		printf(" %i ", lisa.buffer[i]);
+	}
+	printf("\n");
+
         printf("Error prooving checksum for message!\n");
+
         return ERROR_CHECKSUM;
     }
+	printf("Checksum OK \n");
     return COMPLETE;
 }
 

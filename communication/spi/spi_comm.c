@@ -27,7 +27,7 @@
 /// default byte length length
 #define DEFAULT_WORD_LENGTH 8
 /// default clock speed in Hz
-#define DEFAULT_CLOCK_RATE 500000
+#define DEFAULT_CLOCK_RATE 20000000
 // error handling 
 static int err;
 
@@ -88,7 +88,7 @@ spi_device_t* spi_comm_init(const char *device, bool_t read_only)
     else
         device_ptr->fd=open(device, O_RDWR);
     if (device_ptr->fd < 0)
-        pabort("can't open device");
+        pabort("can't  open SPI device");
 
     spi_comm_set_clock_mode(device_ptr, DEFAULT_MODE);
 
