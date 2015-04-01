@@ -65,8 +65,8 @@ message AngleOfAttack{
 
 message LineAngle{
     required uint32 ticks =1;
-    required uint32 angle1 =2;
-    required uint32 angle2 =3;
+    required uint32 azimuth =2;
+    required uint32 elevation =3;
 }
 
 message DMS{
@@ -77,28 +77,29 @@ message DMS{
 
 message IMU
 {
-    required uint32 timestamp = 1;    
+    required uint32 ticks = 1;
     required uint32 sequenceNumber =2 [default=0];
     required XYZ_i accel = 3;
     required XYZ_i gyro = 4;
     required XYZ_i mag =5;
-};
+}
 
 
 
 
 
 message Sensors {
-    required Timestamp timestamp=1
-    repeated IMU imu = 2;
+    required Timestamp timestamp=1;
+    required uint32 ticks=2;
+    repeated IMU imu = 3;
     // following may be filled in.
-    optional Airspeed airspeed =3;
-    optional Gps gps_position =4 ;
-    optional Gps gps_velocity =5 ;
-    optional AngleOfAttack angle_of_attack = 6;
-    optional LineAngle line_angle = 7;
-    optional DMS dms= 8;
-    
+    optional Airspeed airspeed =4;
+    optional Gps gps_position =5 ;
+    optional Gps gps_velocity =6 ;
+    optional AngleOfAttack angle_of_attack = 7;
+    optional LineAngle line_angle = 8;
+    optional DMS dms= 9;
+
 }
 
 message Actuators {
@@ -109,5 +110,3 @@ message Actuators {
   required double rudder = 5;
   required double elevator = 6;
 }
-
-
