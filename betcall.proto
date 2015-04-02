@@ -1,7 +1,12 @@
+//************************************************************
+// The BetCALL protocol defdines the message format for sensor
+// messages from different sensors collected by LISA and passed
+// from the corresponding BeagleBone to the Groundstation
+//************************************************************
 package BetCALL;
 
 
-// Constant which are accessible via generated Headers
+// Constants which are accessible via generated Headers
 enum Message_Constants{
 MAX_MESSAGE_SIZE = 512;
 }
@@ -15,98 +20,117 @@ enum UpDown {
 //************************************************************
 // Submessage definitions
 //************************************************************
+
+// XYZ data of datatype double
 message XYZ_d {
   required double x = 1;
   required double y = 2;
   required double z = 3;
 }
 
+// XYZ data of datatype integer
 message XYZ_i {
   required int32 x = 1;
   required int32 y = 2;
   required int32 z = 3;
 }
 
+// XYZ data of datatype float
 message XYZ_f {
   required float x = 1;
   required float y = 2;
   required float z = 3;
 }
 
+// Timestamp format on BeagleBone or other Linux machines
 message Timestamp {
   required uint64 tsec = 1;
   required uint64 tnsec = 2;
 }
 
+//************************************************************
+// Sensor sub-message definitions
+//************************************************************
+
+// GPS data struct for velocity or position measures from PIKSI
 message Gps
 {
-    required uint32 ticks = 1;
-    required uint32 timeOfWeek =2;
-    required XYZ_d data = 3;
-    required double v_accuracy = 4;
-    required double h_accuracy = 5;
-    required uint32 n_satellites = 6;
-    required bool fixedRTK = 7;
+    required uint32 ticks = 1;                // high precision counter from LISA
+    required uint32 timeOfWeek =2;            // time of week in sec from GPS
+    required XYZ_d data = 3;                  // velocity or position data
+    required double v_accuracy = 4;           // vertical accuracy
+    required double h_accuracy = 5;           // horizontal accuracy
+    required uint32 n_satellites = 6;         // number of satellites
+    required bool fixedRTK = 7;               // flag for differential mode of PIKSI
 }
 
-
+// Airspped data struct measured with Pitot tube sensor from Eagletree
 message Airspeed{
-    required uint32 ticks = 1;
-    required double scaled = 2;
-    optional uint32 raw = 3;
-    optional uint32 offset = 4;
+    required uint32 ticks = 1;                // high precision counter from LISA
+    required float scaled = 2;                // measurement including offset in m/sec
+    optional uint32 raw = 3;                  // raw measurement
+    optional uint32 offset = 4;               // current offset
 }
 
+//  Angle of Attack struct measured via rotational encoders
 message AngleOfAttack{
-    required uint32 ticks =1;
-    required float vertical=2;
-    required float horiontal=3;
+    required uint32 ticks =1;                 // high precision counter from LISA
+    required float vertical=2;                // measured vertical angle in rad
+    required float horiontal=3;               // measured horizontal angle in rad
 }
 
+// Line angle sensor data struct
 message LineAngle{
-    required uint32 ticks =1;
-    required uint32 azimuth =2;
-    required uint32 elevation =3;
+    required uint32 ticks =1;                 // high precision counter from LISA
+    required uint32 azimuth =2;               // azimuth angle as raw value
+    required uint32 elevation =3;             // elevation angle as raw value
 }
 
+// Strain gage data struct
 message DMS{
-    required uint32 ticks =1;
-    required uint32 value=2;
+    required uint32 ticks =1;               // high precision counter from LISA
+    required uint32 value=2;                // current strain measured
 }
 
-
-message IMU
-{
-    required uint32 ticks = 1;
+// IMU data struct
+message IMU {
+    required uint32 ticks = 1;              // high precision counter from LISA
     required uint32 sequenceNumber =2 [default=0];
-    required XYZ_i accel = 3;
-    required XYZ_i gyro = 4;
-    required XYZ_i mag =5;
+    required XYZ_i accel = 3;               // data of accelerometer
+    required XYZ_i gyro = 4;                // data of gyroscope
+    required XYZ_i mag =5;                  // data of magnetometer
 }
 
 
 
-
+//************************************************************
+// Sensor message definition
+//************************************************************
 
 message Sensors {
-    required Timestamp timestamp=1;
-    required uint32 ticks=2;
-    repeated IMU imu = 3;
+    required Timestamp timestamp=1;         // Timestamp when data was received on BeagleBone
+    required uint32 ticks=2;                // high precision counter from LISA  when message was sended
+    repeated IMU imu = 3;                   // list of received IMU messages
     // following may be filled in.
-    optional Airspeed airspeed =4;
-    optional Gps gps_position =5 ;
-    optional Gps gps_velocity =6 ;
-    optional AngleOfAttack angle_of_attack = 7;
-    optional LineAngle line_angle = 8;
-    optional DMS dms= 9;
+    optional Airspeed airspeed =4;          // optional received Airspeed message
+    optional Gps gps_position =5 ;          // optional received gops position message
+    optional Gps gps_velocity =6 ;          // optional received gps velocity message
+    optional AngleOfAttack angle_of_attack = 7; // optional received angle of attack message
+    optional LineAngle line_angle = 8;      // optional received line angle sensor message
+    optional DMS dms= 9;                    // optional received strain gage message
 
 }
 
+
+//************************************************************
+// Actuator message definition
+//************************************************************
+
 message Actuators {
-  required Timestamp timestamp = 1;
-  optional Timestamp timestamp_sensors = 2;
-  required double flaps = 3;
-  required double ailerons = 4;
-  required double rudder = 5;
-  required double elevator = 6;
+  required Timestamp timestamp = 1;         // Timestamp of message
+  optional Timestamp timestamp_start = 2;   // Time when message should be send if not directly
+  required int32 flaps = 3;                 // value for flaps [-9600 .. 9600]
+  required int32 ailerons = 4;              // value for ailerons [-9600 .. 9600]
+  required int32 rudder = 5;                // value for rudder [-9600 .. 9600]
+  required int32 elevator = 6;              // value for elevator [-9600 .. 9600]
 }
