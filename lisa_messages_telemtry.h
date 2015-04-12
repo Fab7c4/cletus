@@ -1,5 +1,5 @@
-#ifndef LISA_MESSAGES_H
-#define LISA_MESSAGES_H
+#ifndef LISA_MESSAGES_TELEMETRY_H
+#define LISA_MESSAGES_TELEMETRY_H
 
 #include <inttypes.h>
 #include "./structures.h"
@@ -75,4 +75,4 @@ typedef struct __attribute__((packed)){ // id = 133
 
 
 
-#endif // LISA_MESSAGES_H
+#endif // LISA_MESSAGES_TELEMETRY_H
