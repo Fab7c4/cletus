@@ -1,5 +1,5 @@
 #include "lisa.h"
-#include "lisa_messages.h"
+#include "lisa_messages_spi.h"
 #include "./communication/spi/spi_comm.h"
 #include "./communication/gpio/gpio.h"
 
@@ -182,7 +182,3 @@ static int lisa_check_message_checksum(uint8_t* buffer, uint16_t length)
     else
         return ERROR_CHECKSUM;
 }
-
-
-
-
