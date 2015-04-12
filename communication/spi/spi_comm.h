@@ -11,11 +11,11 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<stdint.h>
-#include<getopt.h> 
+#include<getopt.h>
 #include<sys/ioctl.h>
 #include<sys/types.h>
 #include<sys/stat.h>
-#include<linux/spi/spidev.h> 
+#include<linux/spi/spidev.h>
 #include<fcntl.h>
 #include <inttypes.h>
 
@@ -35,8 +35,8 @@ typedef struct {
 }spi_device_t;
 
 
-int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint8_t receive_size);
-void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint8_t send_size);
+int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint32_t receive_size);
+void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint32_t send_size);
 spi_device_t* spi_comm_init(const char *device, bool_t read_only);
 void spi_comm_close(spi_device_t* device);
 

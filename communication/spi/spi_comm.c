@@ -28,14 +28,14 @@
 #define DEFAULT_WORD_LENGTH 8
 /// default clock speed in Hz
 #define DEFAULT_CLOCK_RATE 20000000
-// error handling 
+// error handling
 static int err;
 
 
 
 
 // Transfers data on MISO(rx) and MOSI(tx)
-void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint8_t send_size)
+void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint32_t send_size)
 {
     device->spi_transfer->rx_buf = 0;
     device->spi_transfer->len = send_size;
@@ -48,8 +48,7 @@ void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint8_t send_size)
         pabort("error in transmitting SPI-message.");
     if (err < 1)
         pabort("nothing received.");
-    int i;
-    for (i = 0; i < send_size; i++) {
+    for (uint32_t i = 0; i < send_size; i++) {
         if (!(i % 6))
             puts("");
         printf("%i ", tx[i]);
@@ -57,8 +56,8 @@ void spi_comm_transfer(spi_device_t* device, uint8_t *tx, uint8_t send_size)
     puts("");
 }
 
-// Receives data on MISO(rx) without sending and returns 
-int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint8_t receive_size)
+// Receives data on MISO(rx) without sending and returns
+int spi_comm_receive(spi_device_t* device, uint8_t *rx, uint32_t receive_size)
 {
     memset(rx, 0, receive_size);
 
