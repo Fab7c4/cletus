@@ -224,7 +224,7 @@ int main(int argc __attribute__((unused)),
     if (bail) die(bail);
 
     //Init LISA
-    uint8_t buffer[PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE];
+    uint8_t buffer[1024];
 
     lisa_init(buffer);
 
