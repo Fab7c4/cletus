@@ -9,36 +9,68 @@
 #define NUMBER_OF_IMU_DATA_PACKETS 20
 
 
+///********************************************************************
+/// GENERAL SUBMESSAGE DEFINITIONS
+///********************************************************************
+
+
+/// Footer definition
 typedef struct PACKED{
-    uint32_t sequence_number;         // 1
-    uint32_t ticks;         // 1
-    int32_t acc_x;      // 5
-    int32_t acc_y;
-    int32_t acc_z;
-    int32_t gyro_p;     // 2
-    int32_t gyro_q;
-    int32_t gyro_r;
-    int32_t mag_x;      // 8
-    int32_t mag_y;
-    int32_t mag_z;
+    uint8_t checksum1;                  // Incremented sequence number
+    uint8_t checksum2;                  // Number of ticks for timing
+} sensor_data_footer_t;
+
+/// Header definition
+typedef struct PACKED{
+    uint32_t sequence_number;           // Incremented sequence number
+    uint32_t ticks;                     // Number of ticks for timing
+} sensor_data_header_t;
+
+/// Datatype for VECTOR
+typedef struct PACKED{
+    int32_t x;      // 5
+    int32_t y;
+    int32_t z;
+} sensor_data_xyz_t;
+
+/// Datatype for RATES
+typedef struct PACKED{
+    int32_t p;
+    int32_t q;
+    int32_t r;
+} sensor_data_pqr_t;
+
+
+//********************************************************************
+/// SENSOR MESSAGE DEFINITIONS
+///********************************************************************
+
+
+typedef struct PACKED{
+    sensor_data_header_t header;
+    sensor_data_xyz_t accel;
+    sensor_data_pqr_t gyro;
+    sensor_data_xyz_t mag;
 }sensor_data_imu_t ;
 
 
 typedef struct PACKED{
-    uint32_t sequence_number;         // 1
-    uint32_t ticks;         // 1
+    sensor_data_header_t header;
     uint16_t raw;
     uint16_t offset;
-    float scaled;        // 11
+    float scaled;
 }sensor_data_airspeed_t ;
 
+
+//********************************************************************
+/// COMPLETE MESSAGE DEFINITION
+///********************************************************************
+
 typedef struct PACKED{
-    uint32_t sequence_number;         // 1
-    uint32_t ticks;         // 1
-    sensor_data_imu_t imu[NUMBER_OF_IMU_DATA_PACKETS];
+    sensor_data_header_t header;
+    sensor_data_imu_t imu[IMU_HIGHWIND_ARRAY_SIZE];
     sensor_data_airspeed_t airspeed;
-    uint8_t checksum1;     // 14
-    uint8_t checksum2;     // 15
+    sensor_data_footer_t footer;
 }sensor_data_t ;
 
 
