@@ -18,7 +18,7 @@
 #include "./log.h"
 
 #include "./uart.h"
-#include "./lisa_messages.h"
+#include "./lisa_messages_telemetry.h"
 
 
 
@@ -102,4 +102,3 @@ int main(int argc __attribute__((unused)),
   /* Shouldn't get here. */
   return 0;
 }
-

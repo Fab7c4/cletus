@@ -20,7 +20,7 @@
 #include "./actuators.h"
 
 #include "./uart.h"
-#include "./lisa_messages.h"
+#include "./lisa_messages_telemetry.h"
 
 
 char* const TAG = "RUN_ACTUATORS";

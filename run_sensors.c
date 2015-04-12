@@ -20,7 +20,7 @@
 #include "./misc.h"
 #include "./lisa.h"
 
-#include "./lisa_messages.h"
+#include "./lisa_messages_telemetry.h"
 #include "./print_output.h"
 
 #include "./protos_c/messages.pb-c.h"
@@ -64,7 +64,7 @@ static void __attribute__((noreturn)) die(int code) {
     zdestroy(zsock_log, NULL);
     zdestroy(zsock_sensors, NULL);
     zdestroy(zsock_print, NULL);
-    
+
 lisa_close();
 
     printf("%d TX fails; %d RX fails.\n", txfails, rxfails);
@@ -81,7 +81,7 @@ static void sigdie(int signum) {
 
 int main(int argc __attribute__((unused)),
          char **argv __attribute__((unused))) {
-    
+
     struct timespec t;
     struct sched_param param;
     int rt_interval= 0;
@@ -93,11 +93,11 @@ int main(int argc __attribute__((unused)),
         if (*arg_ptr != '\0' || priority > INT_MAX) {
             printf("Failed to read passed priority. Using DEFAULT value instead.\n");
             priority = DEFAULT_RT_PRIORITY;
-            
+
         }
         printf("Setting priority to %li\n", priority);
         set_priority(&param, priority);
-        
+
         long frequency = strtol(argv[2], &arg_ptr,10);
         if (*arg_ptr != '\0' || frequency > INT_MAX) {
             printf("Failed to read passed frequency. Using DEFAULT value instead.\n");
@@ -114,11 +114,11 @@ int main(int argc __attribute__((unused)),
         rt_interval = (NSEC_PER_SEC/DEFAULT_RT_FREQUENCY);
     }
     stack_prefault();
-    
-    
-    
-    
-    
+
+
+
+
+
     /* Confignals. */
     if (signal(SIGINT, &sigdie) == SIG_IGN)
         signal(SIGINT, SIG_IGN);
@@ -128,11 +128,11 @@ int main(int argc __attribute__((unused)),
         signal(SIGHUP, SIG_IGN);
     if (signal(SIGABRT, &sigdie) == SIG_IGN)
         signal(SIGABRT, SIG_IGN);
-    
-    
-    
+
+
+
     /* ZMQ setup first. */
-    
+
     /* Set a low high-water mark (a short queue length, measured in
    * messages) so that a sending PUSH will block if the receiving PULL
    * isn't reading.  In the case of PUB/SUB, we still want a short
@@ -153,10 +153,10 @@ int main(int argc __attribute__((unused)),
     zsock_log = setup_zmq_sender(LOG_CHAN, &zctx, ZMQ_PUSH, 100, 500);
     if (NULL == zsock_log)
         die(1);
-    
-    
-    
-    
+
+
+
+
     /*******************************************
  *PROTOBUF-C INITIALIZATION
  *Memory for submessages is allocated here.
@@ -165,53 +165,53 @@ int main(int argc __attribute__((unused)),
  */
     //Initializing Protobuf messages main sensor message
     protobetty__sensors__init(&sensors);
-#ifdef IMU
-    //Initialize Protobuf for Gyro
-    Protobetty__IMU imu = PROTOBETTY__IMU__INIT;
-    Protobetty__Timestamp imu_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-    imu.timestamp = &imu_timestamp;
-    Protobetty__Xyz gyro_data = PROTOBETTY__XYZ__INIT;
-    imu.gyro = &gyro_data;
-    //Initialize Protobuf for Accelerometer
-    Protobetty__Xyz accel_data = PROTOBETTY__XYZ__INIT;
-    imu.accel = &accel_data;
-    //Initialize Protobuf for Magnetometer
-    Protobetty__Xyz mag_data = PROTOBETTY__XYZ__INIT;
-    imu.mag = &mag_data;
-#endif
-#ifdef AIRSPEED
-    //Initialize Protobuf for Airspeed
-    Protobetty__Airspeed airspeed = PROTOBETTY__AIRSPEED__INIT;
-    Protobetty__Timestamp airspeed_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-    airspeed.timestamp = &airspeed_timestamp;
-#endif
-#ifdef RC
-    //Initialize Protobuf for RC commands
-    Protobetty__Rc rc = PROTOBETTY__RC__INIT;
-    Protobetty__Timestamp rc_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-    rc.timestamp = &rc_timestamp;
-#endif
-    protobetty__log_message__init(&log_data);
-#ifdef SERVOS
-    Protobetty__Servos servos = PROTOBETTY__SERVOS__INIT;
-    Protobetty__Timestamp servo_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-    servos.direction = PROTOBETTY__SERVOS__DIRECTION__LISA2BONE;
-    servos.timestamp = &servo_timestamp;
-#endif
-    
-    
-    
-    
+// #ifdef IMU
+//     //Initialize Protobuf for Gyro
+//     Protobetty__IMU imu = PROTOBETTY__IMU__INIT;
+//     Protobetty__Timestamp imu_timestamp = PROTOBETTY__TIMESTAMP__INIT;
+//     imu.timestamp = &imu_timestamp;
+//     Protobetty__Xyz gyro_data = PROTOBETTY__XYZ__INIT;
+//     imu.gyro = &gyro_data;
+//     //Initialize Protobuf for Accelerometer
+//     Protobetty__Xyz accel_data = PROTOBETTY__XYZ__INIT;
+//     imu.accel = &accel_data;
+//     //Initialize Protobuf for Magnetometer
+//     Protobetty__Xyz mag_data = PROTOBETTY__XYZ__INIT;
+//     imu.mag = &mag_data;
+// #endif
+// #ifdef AIRSPEED
+//     //Initialize Protobuf for Airspeed
+//     Protobetty__Airspeed airspeed = PROTOBETTY__AIRSPEED__INIT;
+//     Protobetty__Timestamp airspeed_timestamp = PROTOBETTY__TIMESTAMP__INIT;
+//     airspeed.timestamp = &airspeed_timestamp;
+// #endif
+// #ifdef RC
+//     //Initialize Protobuf for RC commands
+//     Protobetty__Rc rc = PROTOBETTY__RC__INIT;
+//     Protobetty__Timestamp rc_timestamp = PROTOBETTY__TIMESTAMP__INIT;
+//     rc.timestamp = &rc_timestamp;
+// #endif
+//     protobetty__log_message__init(&log_data);
+// #ifdef SERVOS
+//     Protobetty__Servos servos = PROTOBETTY__SERVOS__INIT;
+//     Protobetty__Timestamp servo_timestamp = PROTOBETTY__TIMESTAMP__INIT;
+//     servos.direction = PROTOBETTY__SERVOS__DIRECTION__LISA2BONE;
+//     servos.timestamp = &servo_timestamp;
+// #endif
+//
+//
+
+
     uint8_t* zmq_buffer = calloc(sizeof(uint8_t),PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
     unsigned int packed_length;
-    
-    
+
+
     clock_gettime(CLOCK_MONOTONIC ,&t);
     /* start after one second */
     t.tv_sec++;
-    
+
     /* const int noutputs = npolls - ninputs; */
-    
+
     /* Here's the main loop -- we only do stuff when input or output
    * happens.  The timeout can be put to good use, or you can also use
    * timerfd_create() to create a file descriptor with a timer under
@@ -222,10 +222,10 @@ int main(int argc __attribute__((unused)),
    * and simply loop over your polls; I've left it all inline here
    * mostly out of laziness. */
     if (bail) die(bail);
-    
+
     //Init LISA
     uint8_t buffer[PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE];
-    
+
     lisa_init(buffer);
 
     int epoll = epoll_create(1);
@@ -241,27 +241,36 @@ int main(int argc __attribute__((unused)),
     while (1)
     {
         int retval = epoll_wait(epoll,pevents,1,500);
-        printf("Epoll returned %i \n", retval);
 	if (bail) die(bail);
         if (retval > 0)
         {
             if ( pevents[0].events & EPOLLIN )
             {
-		printf("Lisa event... \n");
                 retval = lisa_read_message();
                 if (retval > 0)
                 {
-                    sensors_spi_t* sensor_data =(sensors_spi_t*) buffer;
-                    get_protbetty_timestamp(imu.timestamp);
-                    scaled_to_protobuf(&(sensor_data->accel), imu.accel, acc_scale_unit_coef);
-                    scaled_to_protobuf(&(sensor_data->gyro), imu.gyro, gyro_scale_unit_coef);
-                    scaled_to_protobuf(&(sensor_data->mag), imu.mag, mag_scale_unit_coef);
-                    sensors.imu = &imu;
-                    get_protbetty_timestamp(airspeed.timestamp);
-                    airspeed.scaled = sensor_data->airspeed.scaled;
-                    airspeed.raw = sensor_data->airspeed.adc;
-                    airspeed.offset = sensor_data->airspeed.offset;
-                    sensors.airspeed = &airspeed;
+                    sensor_data_t* sensor_data =(sensor_data_t*) buffer;
+                    printf("DEBUG output of message with seqNo %i and ticks %i", sensor_data->header.sequence_number, sensor_data->header.ticks);
+                    for (uint32_t i = 0 ; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
+                    {
+                      printf("IMU package %i with seqNo %i and %i ticks\n", i, sensor_data->imu[i].header.sequence_number, sensor_data->imu[i].header.ticks);
+                      printf("Accel \tX=%i\tY=%i\tZ=%i",sensor_data->imu[i].accel.x, sensor_data->imu[i].accel.y, sensor_data->imu[i].accel.z);
+                      printf("Gyro \tp=%i\tq=%i\tr=%i",sensor_data->imu[i].gyro.p, sensor_data->imu[i].gyro.q,sensor_data->imu[i].gyro.r );
+                      printf("Mag \tX=%i\tY=%i\tZ=%i",sensor_data->imu[i].mag.x, sensor_data->imu[i].mag.y, sensor_data->imu[i].mag.z);
+                    }
+                    printf("AIRSPEED package with seqNo %i and %i ticks\n",sensor_data->airspeed.header.sequence_number, sensor_data->airspeed.header.ticks);
+                    printf("Airspeed \tscaled=%f\traw=%i\toffset=%i",sensor_data->airspeed.scaled, sensor_data->airspeed.raw, sensor_data->airspeed.offset);
+
+                    // get_protbetty_timestamp(imu.timestamp);
+                    // scaled_to_protobuf(&(sensor_data->accel), imu.accel, acc_scale_unit_coef);
+                    // scaled_to_protobuf(&(sensor_data->gyro), imu.gyro, gyro_scale_unit_coef);
+                    // scaled_to_protobuf(&(sensor_data->mag), imu.mag, mag_scale_unit_coef);
+                    // sensors.imu = &imu;
+                    // get_protbetty_timestamp(airspeed.timestamp);
+                    // airspeed.scaled = sensor_data->airspeed.scaled;
+                    // airspeed.raw = sensor_data->airspeed.adc;
+                    // airspeed.offset = sensor_data->airspeed.offset;
+                    // sensors.airspeed = &airspeed;
                 }
                 else if (retval == ERROR_CHECKSUM)
                 {
@@ -332,17 +341,3 @@ int main(int argc __attribute__((unused)),
     /* Shouldn't get here. */
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
