@@ -68,7 +68,7 @@ typedef struct PACKED{
 
 typedef struct PACKED{
     sensor_data_header_t header;
-    sensor_data_imu_t imu[IMU_HIGHWIND_ARRAY_SIZE];
+    sensor_data_imu_t imu[NUMBER_OF_IMU_DATA_PACKETS];
     sensor_data_airspeed_t airspeed;
     sensor_data_footer_t footer;
 }sensor_data_t ;

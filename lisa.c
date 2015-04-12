@@ -1,5 +1,4 @@
 #include "lisa.h"
-#include "lisa_messages_spi.h"
 #include "./communication/spi/spi_comm.h"
 #include "./communication/gpio/gpio.h"
 
@@ -135,18 +134,18 @@ void lisa_close(void)
 int lisa_read_message(void)
 {
     int ret;
-    ret = spi_comm_receive(lisa.spi, lisa.buffer, sizeof(sensors_spi_t));
+    ret = spi_comm_receive(lisa.spi, lisa.buffer, sizeof(sensor_data_t));
     if (ret < 0)
     {
         lisa.state->n_failed++;
         printf("Error receiving data from SPI port!\n");
 	return ERROR_COMMUNICATION;
     }
-    ret = lisa_check_message_checksum(lisa.buffer,sizeof(sensors_spi_t));
+    ret = lisa_check_message_checksum(lisa.buffer,sizeof(sensor_data_t));
     if (ret < 0)
     {
         lisa.state->n_failed++;
-        for (unsigned int i = 0; i < sizeof(sensors_spi_t); i++)
+        for (unsigned int i = 0; i < sizeof(sensor_data_t); i++)
 	{
 		printf(" %i ", lisa.buffer[i]);
 	}
@@ -160,9 +159,9 @@ int lisa_read_message(void)
     return COMPLETE;
 }
 
-sensors_spi_t* lisa_get_message_data(void)
+sensor_data_t* lisa_get_message_data(void)
 {
-    return (sensors_spi_t*) lisa.buffer;
+    return (sensor_data_t*) lisa.buffer;
 }
 
 
@@ -176,8 +175,8 @@ static int lisa_check_message_checksum(uint8_t* buffer, uint16_t length)
         c1 += buffer[i];
         c2 += c1;
     }
-    sensors_spi_t* data = (sensors_spi_t*) buffer;
-    if (data->checksums.checksum1 == c1 && data->checksums.checksum2 == c2)
+    sensor_data_t* data = (sensor_data_t*) buffer;
+    if (data->footer.checksum1 == c1 && data->footer.checksum2 == c2)
         return 1;
     else
         return ERROR_CHECKSUM;

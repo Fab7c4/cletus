@@ -3,6 +3,8 @@
 
 #include <sys/epoll.h>
 #include "./structures.h"
+#include "lisa_messages_spi.h"
+
 
 typedef struct epoll_event epoll_event_t;
 
@@ -21,7 +23,7 @@ void lisa_close(void);
 epoll_event_t* lisa_get_epoll_event(void);
 int lisa_get_gpio_fd(void);
 int lisa_read_message(void);
-sensors_spi_t* lisa_get_message_data(void);
+sensor_data_t* lisa_get_message_data(void);
 
 
 
