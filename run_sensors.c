@@ -240,7 +240,8 @@ int main(int argc __attribute__((unused)),
     //When sensor data is in circular buffer
     while (1)
     {
-        int retval = epoll_wait(epoll,pevents,1,500);
+printf("...\n");     
+   int retval = epoll_wait(epoll,pevents,1,500);
 	if (bail) die(bail);
         if (retval > 0)
         {
@@ -250,16 +251,16 @@ int main(int argc __attribute__((unused)),
                 if (retval > 0)
                 {
                     sensor_data_t* sensor_data =(sensor_data_t*) buffer;
-                    printf("DEBUG output of message with seqNo %i and ticks %i", sensor_data->header.sequence_number, sensor_data->header.ticks);
+                    printf("\nDEBUG output of message with seqNo %i and ticks %i\n", sensor_data->header.sequence_number, sensor_data->header.ticks);
                     for (uint32_t i = 0 ; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
                     {
                       printf("IMU package %i with seqNo %i and %i ticks\n", i, sensor_data->imu[i].header.sequence_number, sensor_data->imu[i].header.ticks);
-                      printf("Accel \tX=%i\tY=%i\tZ=%i",sensor_data->imu[i].accel.x, sensor_data->imu[i].accel.y, sensor_data->imu[i].accel.z);
-                      printf("Gyro \tp=%i\tq=%i\tr=%i",sensor_data->imu[i].gyro.p, sensor_data->imu[i].gyro.q,sensor_data->imu[i].gyro.r );
-                      printf("Mag \tX=%i\tY=%i\tZ=%i",sensor_data->imu[i].mag.x, sensor_data->imu[i].mag.y, sensor_data->imu[i].mag.z);
+                      printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].accel.x, sensor_data->imu[i].accel.y, sensor_data->imu[i].accel.z);
+                      printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu[i].gyro.p, sensor_data->imu[i].gyro.q,sensor_data->imu[i].gyro.r );
+                      printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].mag.x, sensor_data->imu[i].mag.y, sensor_data->imu[i].mag.z);
                     }
                     printf("AIRSPEED package with seqNo %i and %i ticks\n",sensor_data->airspeed.header.sequence_number, sensor_data->airspeed.header.ticks);
-                    printf("Airspeed \tscaled=%f\traw=%i\toffset=%i",sensor_data->airspeed.scaled, sensor_data->airspeed.raw, sensor_data->airspeed.offset);
+                    printf("Airspeed \tscaled=%f\traw=%i\toffset=%i\n",sensor_data->airspeed.scaled, sensor_data->airspeed.raw, sensor_data->airspeed.offset);
 
                     // get_protbetty_timestamp(imu.timestamp);
                     // scaled_to_protobuf(&(sensor_data->accel), imu.accel, acc_scale_unit_coef);

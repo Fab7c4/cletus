@@ -6,7 +6,7 @@
 /// via SPI communication
 
 #define PACKED __attribute__((__packed__))
-#define NUMBER_OF_IMU_DATA_PACKETS 20
+#define NUMBER_OF_IMU_DATA_PACKETS 10
 
 
 ///********************************************************************
@@ -72,7 +72,10 @@ typedef struct PACKED{
     sensor_data_footer_t footer;
 }sensor_data_t ;
 
-
+typedef struct PACKED{
+    uint32_t header;
+    sensor_data_footer_t footer;
+}test_t ;
 
 
 

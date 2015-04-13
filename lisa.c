@@ -143,7 +143,8 @@ int lisa_read_message(void)
         printf("Error receiving data from SPI port!\n");
 	return ERROR_COMMUNICATION;
     }
-    ret = lisa_check_message_checksum(lisa.buffer,sizeof(sensor_data_t));
+
+    ret = lisa_check_message_checksum(lisa.buffer,sizeof(sensor_data_t)-4);
     if (ret < 0)
     {
         lisa.state->n_failed++;
@@ -169,24 +170,50 @@ sensor_data_t* lisa_get_message_data(void)
 
 static int lisa_check_message_checksum(uint8_t* buffer, uint16_t length)
 {
-    int length32 = length/4;
-    uint32_t crc32 = 0;
-
-    for (int i = 0 ; i < length32 ; i++)
+   uint32_t currentData= 0;
+    uint32_t crc32 = 0xFFFFFFFF;
+uint16_t i;
+      for ( i = 0 ; i < length ; i+=4)
     {
-        uint32_t* currentData = (uint32_t*) &buffer[i*4];
-        crc32 = Crc32Fast(crc32, *currentData);
+        currentData = (*(uint8_t *)(buffer + i)) |
+                   (*(uint8_t *)(buffer + i + 1)) << 8 |
+                   (*(uint8_t *)(buffer + i + 2)) << 16 |
+                   (*(uint8_t *)(buffer + i + 3)) << 24;
+        crc32 = Crc32Fast(crc32, currentData);
+	printf("Current crc 0x%08x for data 0x%08x and loop idx %d \n", crc32, currentData, i);
     }
-
-    uint32_t residual = 0;
-    memcpy(&residual, &buffer[length - length%4], length%4);
-    crc32 = Crc32Fast(crc32, residual);
+currentData = 0;
+/* remaining bytes */
+printf("Modulo operation result %d\n", length%4);
+      switch (length % 4) {
+        case 1:
+          currentData = *(uint8_t *)(buffer + i);
+crc32 = Crc32Fast(crc32, currentData);
+          break;
+        case 2:
+          currentData = (*(uint8_t *)(buffer + i)) |
+                   (*(uint8_t *)(buffer + i + 1)) << 8;
+crc32 = Crc32Fast(crc32, currentData);
+          break;
+        case 3:
+          currentData = (*(uint8_t *)(buffer + i)) |
+                   (*(uint8_t *)(buffer + i + 1)) << 8 |
+                   (*(uint8_t *)(buffer + i + 2)) << 16;
+crc32 = Crc32Fast(crc32, currentData);         
+ break;
+        default:
+          break;
+      }
 
     sensor_data_t* data = (sensor_data_t*) buffer;
     if (data->footer.crc32 == crc32)
         return 1;
     else
+	{
+	printf("Crc of message is 0x%08x and calculated crc is 0x%08x\n", data->footer.crc32, crc32);
+	printf("Crc test is 0x%08x for data 0x%08x", Crc32Fast(0xFFFFFFFF, 0x12345678), 0x12345678);
         return ERROR_CHECKSUM;
+	}
 }
 
 
