@@ -27,7 +27,7 @@
 /// default byte length length
 #define DEFAULT_WORD_LENGTH 8
 /// default clock speed in Hz
-#define DEFAULT_CLOCK_RATE 20000000
+#define DEFAULT_CLOCK_RATE 22000000
 // error handling
 static int err;
 
