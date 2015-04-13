@@ -17,6 +17,8 @@
 static int lisa_spi_init(void);
 static int lisa_gpio_init(void);
 static int lisa_check_message_checksum(uint8_t* buffer, uint16_t length);
+static uint32_t Crc32Fast(uint32_t crc, uint32_t data);
+
 
 
 
@@ -167,17 +169,45 @@ sensor_data_t* lisa_get_message_data(void)
 
 static int lisa_check_message_checksum(uint8_t* buffer, uint16_t length)
 {
-    uint8_t c1 =0;
-    uint8_t c2 =0;
+    int length32 = length/4;
+    uint32_t crc32 = 0;
 
-    for (int i = 0 ; i < length-2 ; i++)
+    for (int i = 0 ; i < length32 ; i++)
     {
-        c1 += buffer[i];
-        c2 += c1;
+        uint32_t* currentData = (uint32_t*) &buffer[i*4];
+        crc32 = Crc32Fast(crc32, *currentData);
     }
+
+    uint32_t residual = 0;
+    memcpy(&residual, &buffer[length - length%4], length%4);
+    crc32 = Crc32Fast(crc32, residual);
+
     sensor_data_t* data = (sensor_data_t*) buffer;
-    if (data->footer.checksum1 == c1 && data->footer.checksum2 == c2)
+    if (data->footer.crc32 == crc32)
         return 1;
     else
         return ERROR_CHECKSUM;
+}
+
+
+uint32_t Crc32Fast(uint32_t crc, uint32_t data)
+{
+  static const uint32_t CrcTable[16] = { // Nibble lookup table for 0x04C11DB7 polynomial
+    0x00000000,0x04C11DB7,0x09823B6E,0x0D4326D9,0x130476DC,0x17C56B6B,0x1A864DB2,0x1E475005,
+    0x2608EDB8,0x22C9F00F,0x2F8AD6D6,0x2B4BCB61,0x350C9B64,0x31CD86D3,0x3C8EA00A,0x384FBDBD };
+
+  crc = crc ^ data; // Apply all 32-bits
+
+  // Process 32-bits, 4 at a time, or 8 rounds
+
+  crc = (crc << 4) ^ CrcTable[crc >> 28]; // Assumes 32-bit reg, masking index to 4-bits
+  crc = (crc << 4) ^ CrcTable[crc >> 28]; //  0x04C11DB7 Polynomial used in STM32
+  crc = (crc << 4) ^ CrcTable[crc >> 28];
+  crc = (crc << 4) ^ CrcTable[crc >> 28];
+  crc = (crc << 4) ^ CrcTable[crc >> 28];
+  crc = (crc << 4) ^ CrcTable[crc >> 28];
+  crc = (crc << 4) ^ CrcTable[crc >> 28];
+  crc = (crc << 4) ^ CrcTable[crc >> 28];
+
+  return(crc);
 }

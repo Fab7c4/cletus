@@ -16,8 +16,7 @@
 
 /// Footer definition
 typedef struct PACKED{
-    uint8_t checksum1;                  // Incremented sequence number
-    uint8_t checksum2;                  // Number of ticks for timing
+    uint32_t crc32;       
 } sensor_data_footer_t;
 
 /// Header definition
