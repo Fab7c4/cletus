@@ -1,12 +1,6 @@
 [submodule "make"]
 	path = make
 	url = https://github.com/peddie/Makefile-template
-[submodule "piksi/libswiftnav"]
-	path = piksi/libswiftnav
-	url = https://github.com/swift-nav/libswiftnav.git
-[submodule "libftdi"]
-	path = libftdi
-	url = git://developer.intra2net.com/libftdi
 [submodule "ext/protobuf-c"]
 	path = ext/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c.git
