@@ -4,3 +4,6 @@
 [submodule "ext/protobuf-c"]
 	path = ext/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c.git
+[submodule "ext/google-protobuf"]
+	path = ext/google-protobuf
+	url = https://github.com/google/protobuf.git
