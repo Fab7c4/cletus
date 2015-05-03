@@ -23,6 +23,7 @@ typedef struct PACKED{
 typedef struct PACKED{
     uint32_t sequence_number;           // Incremented sequence number
     uint32_t ticks;                     // Number of ticks for timing
+    uint32_t incremented_ticks;
 } sensor_data_header_t;
 
 /// Datatype for VECTOR
