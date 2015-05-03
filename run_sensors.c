@@ -24,6 +24,8 @@
 #include "./print_output.h"
 
 #include "./protos_c/messages.pb-c.h"
+#include "./betcomm/c/betcall.pb-c.h"
+
 
 
 
@@ -53,9 +55,7 @@ static void *zsock_log = NULL;
 void *zsock_print = NULL;
 
 
-Protobetty__Sensors sensors;
-Protobetty__LogMessage log_data;
-
+BetCALL__Sensors sensors;
 
 /* Error tracking. */
 int txfails = 0, rxfails = 0;
@@ -64,8 +64,8 @@ static void __attribute__((noreturn)) die(int code) {
     zdestroy(zsock_log, NULL);
     zdestroy(zsock_sensors, NULL);
     zdestroy(zsock_print, NULL);
-
-lisa_close();
+    //Close connections and port opened by LISA
+    lisa_close();
 
     printf("%d TX fails; %d RX fails.\n", txfails, rxfails);
     printf("Moriturus te saluto!\n");
@@ -116,9 +116,6 @@ int main(int argc __attribute__((unused)),
     stack_prefault();
 
 
-
-
-
     /* Confignals. */
     if (signal(SIGINT, &sigdie) == SIG_IGN)
         signal(SIGINT, SIG_IGN);
@@ -164,42 +161,39 @@ int main(int argc __attribute__((unused)),
  *the pointer will set to the corresponding submessages
  */
     //Initializing Protobuf messages main sensor message
-    protobetty__sensors__init(&sensors);
-// #ifdef IMU
-//     //Initialize Protobuf for Gyro
-//     Protobetty__IMU imu = PROTOBETTY__IMU__INIT;
-//     Protobetty__Timestamp imu_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-//     imu.timestamp = &imu_timestamp;
-//     Protobetty__Xyz gyro_data = PROTOBETTY__XYZ__INIT;
-//     imu.gyro = &gyro_data;
-//     //Initialize Protobuf for Accelerometer
-//     Protobetty__Xyz accel_data = PROTOBETTY__XYZ__INIT;
-//     imu.accel = &accel_data;
-//     //Initialize Protobuf for Magnetometer
-//     Protobetty__Xyz mag_data = PROTOBETTY__XYZ__INIT;
-//     imu.mag = &mag_data;
-// #endif
-// #ifdef AIRSPEED
-//     //Initialize Protobuf for Airspeed
-//     Protobetty__Airspeed airspeed = PROTOBETTY__AIRSPEED__INIT;
-//     Protobetty__Timestamp airspeed_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-//     airspeed.timestamp = &airspeed_timestamp;
-// #endif
-// #ifdef RC
-//     //Initialize Protobuf for RC commands
-//     Protobetty__Rc rc = PROTOBETTY__RC__INIT;
-//     Protobetty__Timestamp rc_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-//     rc.timestamp = &rc_timestamp;
-// #endif
-//     protobetty__log_message__init(&log_data);
-// #ifdef SERVOS
-//     Protobetty__Servos servos = PROTOBETTY__SERVOS__INIT;
-//     Protobetty__Timestamp servo_timestamp = PROTOBETTY__TIMESTAMP__INIT;
-//     servos.direction = PROTOBETTY__SERVOS__DIRECTION__LISA2BONE;
-//     servos.timestamp = &servo_timestamp;
-// #endif
-//
-//
+    bet_call__sensors__init(&sensors);
+    BetCALL__Timestamp sensors_timestamp = BET_CALL__TIMESTAMP__INIT;
+    #ifdef IMU
+    //Initialize Protobuf for Gyro
+    BetCALL__IMU** imu_messages;
+    imu_messages = malloc (sizeof (BetCALL__IMU*) * NUMBER_OF_IMU_DATA_PACKETS);
+    for (size_t i = 0; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
+    {
+        imu_messages[i] = malloc (sizeof (BetCALL__IMU));
+        bet_call__imu__init (imu_messages[i]);
+        BetCALL__Ticks imu_ticks = BET_CALL__TICKS__INIT;
+        imu_messages[i]->ticks = &imu_ticks;
+        BetCALL__XYZI gyro_data = BET_CALL__XYZ_I__INIT;
+        imu_messages[i]->gyro = &gyro_data;
+        //Initialize Protobuf for Accelerometer
+        BetCALL__XYZI accel_data = BET_CALL__XYZ_I__INIT;
+        imu_messages[i]->accel = &accel_data;
+        //Initialize Protobuf for Magnetometer
+        BetCALL__XYZI mag_data = BET_CALL__XYZ_I__INIT;
+        imu_messages[i]->mag = &mag_data;
+    }
+    sensors.n_imu = NUMBER_OF_IMU_DATA_PACKETS;
+    sensors.imu = imu_messages;
+    #endif
+    #ifdef AIRSPEED
+    //Initialize Protobuf for Airspeed
+    BetCALL__Airspeed airspeed = BET_CALL__AIRSPEED__INIT;
+    BetCALL__Ticks airspeed_ticks = BET_CALL__TICKS__INIT;
+    airspeed.ticks = &airspeed_ticks;
+    airspeed.has_offset = 1;
+    airspeed.has_raw = 1;
+    #endif
+
 
 
     uint8_t* zmq_buffer = calloc(sizeof(uint8_t),PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
@@ -240,9 +234,9 @@ int main(int argc __attribute__((unused)),
     //When sensor data is in circular buffer
     while (1)
     {
-printf("...\n");     
-   int retval = epoll_wait(epoll,pevents,1,500);
-	if (bail) die(bail);
+        printf("...\n");
+        int retval = epoll_wait(epoll,pevents,1,500);
+        if (bail) die(bail);
         if (retval > 0)
         {
             if ( pevents[0].events & EPOLLIN )
@@ -252,34 +246,63 @@ printf("...\n");
                 {
                     sensor_data_t* sensor_data =(sensor_data_t*) buffer;
                     printf("\nDEBUG output of message with seqNo %i and ticks %i\n", sensor_data->header.sequence_number, sensor_data->header.ticks);
-                    for (uint32_t i = 0 ; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
+                    for (int32_t i = 0 ; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
                     {
-                      printf("IMU package %i with seqNo %i and %i ticks\n", i, sensor_data->imu[i].header.sequence_number, sensor_data->imu[i].header.ticks);
-                      printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].accel.x, sensor_data->imu[i].accel.y, sensor_data->imu[i].accel.z);
-                      printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu[i].gyro.p, sensor_data->imu[i].gyro.q,sensor_data->imu[i].gyro.r );
-                      printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].mag.x, sensor_data->imu[i].mag.y, sensor_data->imu[i].mag.z);
+#ifdef IMU
+
+                        //Debug output on beaglebone
+                        printf("IMU package %i with seqNo %i and %i ticks\n", i, sensor_data->imu[i].header.sequence_number, sensor_data->imu[i].header.ticks);
+                        printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].accel.x, sensor_data->imu[i].accel.y, sensor_data->imu[i].accel.z);
+                        printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu[i].gyro.p, sensor_data->imu[i].gyro.q,sensor_data->imu[i].gyro.r );
+                        printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].mag.x, sensor_data->imu[i].mag.y, sensor_data->imu[i].mag.z);
+
+                        //setting data in protobufs
+                        imu_messages[i]->accel->x = sensor_data->imu[i].accel.x;
+                        imu_messages[i]->accel->y = sensor_data->imu[i].accel.y;
+                        imu_messages[i]->accel->z = sensor_data->imu[i].accel.z;
+                        imu_messages[i]->gyro->z = sensor_data->imu[i].gyro.p;
+                        imu_messages[i]->gyro->y = sensor_data->imu[i].gyro.q;
+                        imu_messages[i]->gyro->x = sensor_data->imu[i].gyro.r;
+                        imu_messages[i]->mag->y = sensor_data->imu[i].mag.x;
+                        imu_messages[i]->mag->x = sensor_data->imu[i].mag.y;
+                        imu_messages[i]->mag->z = sensor_data->imu[i].mag.z;
+                        imu_messages[i]->ticks->ticks = sensor_data->imu[i].header.ticks;
+                        imu_messages[i]->ticks->incremented = sensor_data->imu[i].header.incremented_ticks;
+                        imu_messages[i]->sequencenumber = sensor_data->imu[i].header.sequence_number;
+#endif
+
+
                     }
+
+#ifdef AIRSPEED
                     printf("AIRSPEED package with seqNo %i and %i ticks\n",sensor_data->airspeed.header.sequence_number, sensor_data->airspeed.header.ticks);
                     printf("Airspeed \tscaled=%f\traw=%i\toffset=%i\n",sensor_data->airspeed.scaled, sensor_data->airspeed.raw, sensor_data->airspeed.offset);
 
-                    // get_protbetty_timestamp(imu.timestamp);
-                    // scaled_to_protobuf(&(sensor_data->accel), imu.accel, acc_scale_unit_coef);
-                    // scaled_to_protobuf(&(sensor_data->gyro), imu.gyro, gyro_scale_unit_coef);
-                    // scaled_to_protobuf(&(sensor_data->mag), imu.mag, mag_scale_unit_coef);
-                    // sensors.imu = &imu;
-                    // get_protbetty_timestamp(airspeed.timestamp);
-                    // airspeed.scaled = sensor_data->airspeed.scaled;
-                    // airspeed.raw = sensor_data->airspeed.adc;
-                    // airspeed.offset = sensor_data->airspeed.offset;
-                    // sensors.airspeed = &airspeed;
+                    airspeed.ticks->ticks = sensor_data->airspeed.header.ticks;
+                    airspeed.ticks->incremented = sensor_data->airspeed.header.incremented_ticks;
+                    airspeed.scaled = sensor_data->airspeed.scaled;
+                    airspeed.raw = sensor_data->airspeed.raw;
+                    airspeed.offset = sensor_data->airspeed.offset;
+
+
+                    get_betcall_timestamp(&sensors_timestamp);
+                    sensors.timestamp = &sensors_timestamp;
+                    sensors.imu = imu_messages;
+                    sensors.n_imu = NUMBER_OF_IMU_DATA_PACKETS;
+                    sensors.airspeed = &airspeed;
+
+#endif
+
                 }
                 else if (retval == ERROR_CHECKSUM)
                 {
                     send_warning(zsock_print,TAG,"ERROR Checksum test failed for id %i\n",buffer[LISA_INDEX_MSG_ID]);
+                    continue;
                 }
                 else if (retval == ERROR_COMMUNICATION)
                 {
                     send_warning(zsock_print,TAG,"ERROR wrong receiving data\n");
+                    continue;
                 }
             }
         }
@@ -288,55 +311,18 @@ printf("...\n");
             continue;
         }
 
-        //********************************************
-        // SENDING SENSOR DATA to Controller
-        //********************************************
-        //If we have all IMU messages we send data to controller
-        if (sensors.imu  != NULL)
-        {
-            //set message type corresponding to the data currently available
-            if ((sensors.gps_position != NULL || sensors.gps_velocity != NULL) && (sensors.airspeed != NULL))
-            {
-                sensors.type = PROTOBETTY__SENSORS__TYPE__IMU_GPS_AIRSPEED;
-            }
-            else if (sensors.gps_position != NULL || sensors.gps_velocity != NULL)
-            {
-                sensors.type = PROTOBETTY__SENSORS__TYPE__IMU_GPS;
-            }
-            else if (sensors.airspeed != NULL)
-            {
-                sensors.type = PROTOBETTY__SENSORS__TYPE__IMU_AIRSPEED;
-            }
-            else
-            {
-                sensors.type = PROTOBETTY__SENSORS__TYPE__IMU_ONLY;
-            }
-            //get size of packed data
-            packed_length = protobetty__sensors__get_packed_size(&sensors);
-            //pack data to buffer
-            protobetty__sensors__pack(&sensors,zmq_buffer);
-            //sending sensor message over zmq
-            int zs = zmq_send(zsock_sensors, zmq_buffer, packed_length, 0);
-            if (zs < 0) {
-                txfails++;
-            } else {
-                send_debug(zsock_print,TAG,"Message sent to controller!, size: %u\n", packed_length);
-            }
-            log_data.sensors = &sensors;
-            //get size of packed data
-            packed_length = protobetty__log_message__get_packed_size(&log_data);
-            //pack data to buffer
-            protobetty__log_message__pack(&log_data,zmq_buffer);
-            zs = zmq_send(zsock_log, zmq_buffer, packed_length, ZMQ_NOBLOCK);
-            if (zs < 0) {
-                txfails++;
-            } else {
-                send_debug(zsock_print,TAG,"Message sent to logger!, size: %u\n", packed_length);
-            }
-            protobetty__sensors__init(&sensors);
-            protobetty__log_message__init(&log_data);
+        //get size of packed data
+        packed_length = bet_call__sensors__get_packed_size(&sensors);
+        //pack data to buffer
+        bet_call__sensors__pack(&sensors,zmq_buffer);
+        //sending sensor message over zmq
+        int zs = zmq_send(zsock_sensors, zmq_buffer, packed_length, 0);
+        if (zs < 0) {
+            txfails++;
+        } else {
+            send_debug(zsock_print,TAG,"Message sent to controller!, size: %u\n", packed_length);
         }
-
+        bet_call__sensors__init(&sensors);
     }
 
     /* Shouldn't get here. */
