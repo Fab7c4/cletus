@@ -9,7 +9,6 @@
 #define __SENSORS_H__
 #include "./structures.h"
 #include "./protos_c/messages.pb-c.h"
-#include "./piksi/piksi.h"
 
 
 #define MAX_STREAM_SIZE 255
