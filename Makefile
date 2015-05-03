@@ -1,5 +1,5 @@
 # What's the executable called?
-PROJ =  run_uart run_sensors run_controller run_actuators run_function_test sim_uart run_print_output run_logger
+PROJ =  run_uart run_sensors run_controller run_actuators run_print_output run_logger
 
 
 
@@ -9,6 +9,7 @@ C_SRC = run_uart.c \
 	run_actuators.c \
 	run_sensors.c \
 	run_print_output.c \
+	run_logger.c \
 	sensors.c \
 	uart.c \
 	controller.c \
@@ -16,12 +17,10 @@ C_SRC = run_uart.c \
 	print_output.c \
 	misc.c \
 	zmq.c \
-	run_function_test.c \
-	sim_uart.c \
-	run_logger.c \
-        lisa.c\
-        communication/spi/spi_comm.c\
-        communication/gpio/gpio.c
+    lisa.c\
+    communication/spi/spi_comm.c\
+    communication/gpio/gpio.c \
+	betcomm/c/betcall.pb-c.c
 
 
 
@@ -29,7 +28,7 @@ CXX_SRC = \
 #	main.cpp \
 #	parsing.cpp
 
-LIBS = $(shell pkg-config --libs libzmq) $(shell pkg-config --libs libprotobuf-c)-lm -lrt -lprotobuf  -pthread 
+LIBS = $(shell pkg-config --libs libzmq) $(shell pkg-config --libs libprotobuf-c)-lm -lrt -lprotobuf  -pthread
 
 Q ?= @
 
