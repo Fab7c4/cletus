@@ -11,6 +11,7 @@
 #include <time.h>
 #include "./structures.h"
 #include "./protos_c/messages.pb-c.h"
+#include "./betcomm/c/betcall.pb-c.h"
 #include <string.h>
 #include <sched.h>
 #include <sys/mman.h>
@@ -41,6 +42,8 @@ typedef struct timespec timespec;
 double floating_time(const timestamp_t * const t);
 void gettime(timestamp_t * const t);
 void get_protbetty_timestamp(Protobetty__Timestamp * const t);
+void get_betcall_timestamp(BetCALL__Timestamp * const t);
+
 
 void stack_prefault(void);
 int set_priority(sched_param* const param, const int priority);
