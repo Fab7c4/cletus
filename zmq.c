@@ -192,7 +192,11 @@ inline void zsuccess(void *sockit, const char *path) {
       printf("successfully set up to PULL messages on '%s'.\n", path);
       break;
     case ZMQ_REQ:
+      printf("successfully set up CLIENT to REQUEST messages on '%s'.\n", path);
+      break;
     case ZMQ_REP:
+      printf("successfully set up SERVER to REPLY messages on '%s'.\n", path);
+      break;
     case ZMQ_ROUTER:
     case ZMQ_DEALER:
     case ZMQ_PAIR:

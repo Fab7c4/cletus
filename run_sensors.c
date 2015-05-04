@@ -154,7 +154,7 @@ int main(int argc __attribute__((unused)),
     if (NULL == zsock_log)
         die(1);
     zsock_groundstation = setup_zmq_sender(GROUNDSTATION_SEND_CHAN, &zctx, ZMQ_REQ, 10, 512);
-    if (NULL == zsock_log)
+    if (NULL == zsock_groundstation)
         die(1);
 
 
@@ -275,6 +275,8 @@ int main(int argc __attribute__((unused)),
                         imu_messages[i]->ticks->ticks = sensor_data->imu[i].header.ticks;
                         imu_messages[i]->ticks->incremented = sensor_data->imu[i].header.incremented_ticks;
                         imu_messages[i]->sequencenumber = sensor_data->imu[i].header.sequence_number;
+                        sensors.imu = imu_messages;
+                        sensors.n_imu = NUMBER_OF_IMU_DATA_PACKETS;
 #endif
 
 
@@ -289,15 +291,10 @@ int main(int argc __attribute__((unused)),
                     airspeed.scaled = sensor_data->airspeed.scaled;
                     airspeed.raw = sensor_data->airspeed.raw;
                     airspeed.offset = sensor_data->airspeed.offset;
-
-
+                    sensors.airspeed = &airspeed;
+#endif
                     get_betcall_timestamp(&sensors_timestamp);
                     sensors.timestamp = &sensors_timestamp;
-                    sensors.imu = imu_messages;
-                    sensors.n_imu = NUMBER_OF_IMU_DATA_PACKETS;
-                    sensors.airspeed = &airspeed;
-
-#endif
 
                 }
                 else if (retval == ERROR_CHECKSUM)
