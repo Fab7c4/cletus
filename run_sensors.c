@@ -51,6 +51,8 @@ char* TAG = "RUN_SENSORS";
 static void *zctx = NULL;
 static void *zsock_sensors = NULL;
 static void *zsock_log = NULL;
+static void *zsock_groundstation = NULL;
+
 
 void *zsock_print = NULL;
 
@@ -64,6 +66,7 @@ static void __attribute__((noreturn)) die(int code) {
     zdestroy(zsock_log, NULL);
     zdestroy(zsock_sensors, NULL);
     zdestroy(zsock_print, NULL);
+    zdestroy(zsock_groundstation, NULL);
     //Close connections and port opened by LISA
     lisa_close();
 
@@ -148,6 +151,9 @@ int main(int argc __attribute__((unused)),
     if (NULL == zsock_print)
         die(1);
     zsock_log = setup_zmq_sender(LOG_CHAN, &zctx, ZMQ_PUSH, 100, 500);
+    if (NULL == zsock_log)
+        die(1);
+    zsock_groundstation = setup_zmq_sender(GROUNDSTATION_SEND_CHAN, &zctx, ZMQ_REQ, 10, 512);
     if (NULL == zsock_log)
         die(1);
 
@@ -315,12 +321,19 @@ int main(int argc __attribute__((unused)),
         packed_length = bet_call__sensors__get_packed_size(&sensors);
         //pack data to buffer
         bet_call__sensors__pack(&sensors,zmq_buffer);
-        //sending sensor message over zmq
-        int zs = zmq_send(zsock_sensors, zmq_buffer, packed_length, 0);
+        //sending sensor message over zmq to groundstation
+        int zs = zmq_send(zsock_groundstation, zmq_buffer, packed_length, 0);
         if (zs < 0) {
             txfails++;
         } else {
-            send_debug(zsock_print,TAG,"Message sent to controller!, size: %u\n", packed_length);
+            send_debug(zsock_print,TAG,"Message sent to Groundstation!, size: %u\n", packed_length);
+        }
+        //sending sensor message over zmq internal to other processes
+        zs = zmq_send(zsock_sensors, zmq_buffer, packed_length, 0);
+        if (zs < 0) {
+            txfails++;
+        } else {
+            send_debug(zsock_print,TAG,"Message sent to other process!, size: %u\n", packed_length);
         }
         bet_call__sensors__init(&sensors);
     }
