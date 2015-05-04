@@ -177,16 +177,21 @@ int main(int argc __attribute__((unused)),
     {
         imu_messages[i] = malloc (sizeof (BetCALL__IMU));
         bet_call__imu__init (imu_messages[i]);
-        BetCALL__Ticks imu_ticks = BET_CALL__TICKS__INIT;
-        imu_messages[i]->ticks = &imu_ticks;
-        BetCALL__XYZI gyro_data = BET_CALL__XYZ_I__INIT;
-        imu_messages[i]->gyro = &gyro_data;
+        BetCALL__Ticks* imu_ticks = malloc (sizeof(BetCALL__Ticks));
+        bet_call__ticks__init(imu_ticks);
+        imu_messages[i]->ticks = imu_ticks;
+        //Initialize Protobuf for Gyroscope
+        BetCALL__XYZI* gyro_data = malloc (sizeof(BetCALL__XYZI));
+        bet_call__xyz_i__init(gyro_data);
+        imu_messages[i]->gyro = gyro_data;
         //Initialize Protobuf for Accelerometer
-        BetCALL__XYZI accel_data = BET_CALL__XYZ_I__INIT;
-        imu_messages[i]->accel = &accel_data;
+        BetCALL__XYZI* accel_data = malloc (sizeof(BetCALL__XYZI));
+        bet_call__xyz_i__init(accel_data);
+        imu_messages[i]->gyro = accel_data;
         //Initialize Protobuf for Magnetometer
-        BetCALL__XYZI mag_data = BET_CALL__XYZ_I__INIT;
-        imu_messages[i]->mag = &mag_data;
+        BetCALL__XYZI* mag_data = malloc (sizeof(BetCALL__XYZI));
+        bet_call__xyz_i__init(mag_data);
+        imu_messages[i]->gyro = mag_data;
     }
     sensors.n_imu = NUMBER_OF_IMU_DATA_PACKETS;
     sensors.imu = imu_messages;
