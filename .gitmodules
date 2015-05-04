@@ -7,3 +7,6 @@
 [submodule "ext/google-protobuf"]
 	path = ext/google-protobuf
 	url = https://github.com/google/protobuf.git
+[submodule "betcomm"]
+	path = betcomm
+	url = http://gitlab.syscoop.de/julian.reimer/betcomm.git
