@@ -212,14 +212,14 @@ inline int zaddpath(void *sockit, const char *path) {
   switch (type) {
     case ZMQ_PUB:
     case ZMQ_PULL:
+    case ZMQ_REP:
       rc = zbind(sockit, path);
       break;
     case ZMQ_PUSH:
     case ZMQ_SUB:
+    case ZMQ_REQ:
       rc = zconnect(sockit, path);
       break;
-    case ZMQ_REP:
-    case ZMQ_REQ:
     case ZMQ_ROUTER:
     case ZMQ_DEALER:
     case ZMQ_XSUB:
