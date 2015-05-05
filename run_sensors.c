@@ -187,11 +187,11 @@ int main(int argc __attribute__((unused)),
         //Initialize Protobuf for Accelerometer
         BetCALL__XYZI* accel_data = malloc (sizeof(BetCALL__XYZI));
         bet_call__xyz_i__init(accel_data);
-        imu_messages[i]->gyro = accel_data;
+        imu_messages[i]->accel = accel_data;
         //Initialize Protobuf for Magnetometer
         BetCALL__XYZI* mag_data = malloc (sizeof(BetCALL__XYZI));
         bet_call__xyz_i__init(mag_data);
-        imu_messages[i]->gyro = mag_data;
+        imu_messages[i]->mag = mag_data;
     }
     sensors.n_imu = NUMBER_OF_IMU_DATA_PACKETS;
     sensors.imu = imu_messages;
