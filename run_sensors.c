@@ -207,7 +207,7 @@ int main(int argc __attribute__((unused)),
 
 
 
-    uint8_t* zmq_buffer = calloc(sizeof(uint8_t),PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
+    uint8_t* zmq_buffer = calloc(sizeof(uint8_t),BET_CALL__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
     unsigned int packed_length;
 
 
