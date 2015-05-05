@@ -20,7 +20,9 @@ C_SRC = run_uart.c \
     lisa.c\
     communication/spi/spi_comm.c\
     communication/gpio/gpio.c \
-	betcomm/c/betcall.pb-c.c
+	betcomm/c/betcall.pb-c.c\
+	betcomm/c/betlog.pb-c.c
+
 
 
 
