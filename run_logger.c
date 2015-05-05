@@ -23,11 +23,12 @@
 #include "./print_output.h"
 
 #include "./controller.h"
-#include "./protos_c/messages.pb-c.h"
+#include "./betcomm/c/betcall.pb-c.h"
+#include "./betcomm/c/betlog.pb-c.h"
 
 
-#define BYTES_FOR_LOGGING 20 * 1024 *1024
-#define MAX_NUMBER_OF_MESSAGES BYTES_FOR_LOGGING/50
+#define BYTES_FOR_LOGGING 50 * 1024 *1024
+#define MAX_NUMBER_OF_MESSAGES BYTES_FOR_LOGGING/BET_CALL__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE
 
 static long safe_to_file(void);
 int write_to_file(uint8_t* buffer, uint32_t size);
@@ -126,7 +127,7 @@ int main(int argc __attribute__((unused)),
         signal(SIGABRT, SIG_IGN);
 
 
-    zsock_logs = setup_zmq_receiver(LOG_CHAN, &zctx, ZMQ_PULL, NULL, 1000, 500);
+    zsock_logs = setup_zmq_receiver(SENSORS_CHAN, &zctx, ZMQ_SUB, NULL, 1000, 500);
     if (NULL == zsock_logs)
         die(1);
     zsock_print = setup_zmq_sender(PRINT_CHAN, &zctx, ZMQ_PUSH, 100, 500);
@@ -205,13 +206,13 @@ int main(int argc __attribute__((unused)),
 
 
         if (bail) die(bail);
-        if ((byte_counter) < (BYTES_FOR_LOGGING - PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE))
+        if ((byte_counter) < (BYTES_FOR_LOGGING - BET_CALL__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE))
         {
             if (poll_logs.revents & ZMQ_POLLIN)
             {
                 const int zmq_received = zmq_recvm(zsock_logs,
                                                    (uint8_t*) &ptr_temp_memory[byte_counter],
-                                                   PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
+                                                   BET_CALL__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
                 if (zmq_received > 0)
                 {
                     message_positions[counter_log_messages] = &ptr_temp_memory[byte_counter];
@@ -238,8 +239,8 @@ static long safe_to_file(void)
 {
 
 
-    Protobetty__LogMessage **log_messages = NULL;
-    log_messages = alloc_workbuf(sizeof(Protobetty__LogMessage*)*counter_log_messages);
+    BetCALL__Sensors **log_messages = NULL;
+    log_messages = alloc_workbuf(sizeof(BetCALL__Sensors*)*counter_log_messages);
     if (log_messages == NULL)
     {
         printf("Error allocating memory for receiving messages!\n");
@@ -247,16 +248,16 @@ static long safe_to_file(void)
     }
     for (uint32_t i = 0; i < counter_log_messages; i++)
     {
-        log_messages[i] = protobetty__log_message__unpack(NULL, message_sizes[i], message_positions[i]);
+        log_messages[i] = bet_call__sensors__unpack(NULL, message_sizes[i], message_positions[i]);
     }
 
 
     //Allocate protobuf structure for sensors and set data
-    Protobetty__LogContainer log_container = PROTOBETTY__LOG_CONTAINER__INIT;
-    log_container.n_log_data = counter_log_messages;
-    log_container.log_data = log_messages;
+    BetLOG__LogData log_data = BET_LOG__LOG_DATA__INIT;
+    log_data.n_sensor_data = counter_log_messages;
+    log_data.sensor_data = log_messages;
     // back it to buffer
-    const uint64_t packed_size = protobetty__log_container__get_packed_size(&log_container);
+    const uint64_t packed_size = bet_log__log_data__get_packed_size(&log_data);
     uint8_t* buffer = alloc_workbuf(packed_size);
     if (buffer == NULL)
     {
@@ -269,11 +270,11 @@ static long safe_to_file(void)
             exit(EXIT_FAILURE);
         }
     }
-    protobetty__log_container__pack(&log_container,buffer);
+    bet_log__log_data__pack(&log_data,buffer);
     //Free unpacked memory
     for (uint32_t i = 0; i < counter_log_messages; i++)
     {
-        protobetty__log_message__free_unpacked(log_messages[i], NULL);
+        bet_call__sensors__free_unpacked(log_messages[i], NULL);
     }
 
     if (write_to_file(buffer, packed_size) < 0)
