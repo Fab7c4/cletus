@@ -246,8 +246,10 @@ static long safe_to_file(void)
         printf("Error allocating memory for receiving messages!\n");
         die(1);
     }
+    printf("Unpacking %i messages\n", counter_log_messages);
     for (uint32_t i = 0; i < counter_log_messages; i++)
     {
+        printf("Unpacking message %i with size %i \n", i, message_sizes[i]);
         log_messages[i] = bet_call__sensors__unpack(NULL, message_sizes[i], message_positions[i]);
     }
 
