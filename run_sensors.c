@@ -169,6 +169,7 @@ int main(int argc __attribute__((unused)),
     //Initializing Protobuf messages main sensor message
     bet_call__sensors__init(&sensors);
     BetCALL__Timestamp sensors_timestamp = BET_CALL__TIMESTAMP__INIT;
+    BetCALL__Ticks sensors_ticks = BET_CALL__TICKS__INIT;
 #ifdef IMU
     //Initialize Protobuf for Gyro
     BetCALL__IMU** imu_messages;
@@ -257,6 +258,8 @@ int main(int argc __attribute__((unused)),
                 {
                     sensor_data_t* sensor_data =(sensor_data_t*) buffer;
                     printf("\nDEBUG output of message with seqNo %i and ticks %i\n", sensor_data->header.sequence_number, sensor_data->header.ticks);
+                    sensors_ticks.ticks = sensor_data->header.ticks;
+                    sensors_ticks.incremented = sensor_data->header.incremented_ticks;
 #ifdef IMU
                     uint16_t n_imu = 0;
                     for (int32_t i = 0 ; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
@@ -304,6 +307,7 @@ int main(int argc __attribute__((unused)),
 #endif
                     get_betcall_timestamp(&sensors_timestamp);
                     sensors.timestamp = &sensors_timestamp;
+                    sensors.ticks = &sensors_ticks;
 
                 }
                 else if (retval == ERROR_CHECKSUM)
