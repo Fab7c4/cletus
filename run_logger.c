@@ -251,6 +251,10 @@ static long safe_to_file(void)
     {
         printf("Unpacking message %i with size %i \n", i, message_sizes[i]);
         log_messages[i] = bet_call__sensors__unpack(NULL, message_sizes[i], message_positions[i]);
+        if (log_messages[i] == NULL)
+        {
+            printf("Failed to unpack message with index %i\n", i);
+        }
     }
 
 
@@ -260,6 +264,7 @@ static long safe_to_file(void)
     log_data.sensor_data = log_messages;
     // back it to buffer
     const uint64_t packed_size = bet_log__log_data__get_packed_size(&log_data);
+    printf("Allocating buffer for save operation %" PRIu64"\n", packed_size);
     uint8_t* buffer = alloc_workbuf(packed_size);
     if (buffer == NULL)
     {
