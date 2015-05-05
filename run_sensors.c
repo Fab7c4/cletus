@@ -169,7 +169,7 @@ int main(int argc __attribute__((unused)),
     //Initializing Protobuf messages main sensor message
     bet_call__sensors__init(&sensors);
     BetCALL__Timestamp sensors_timestamp = BET_CALL__TIMESTAMP__INIT;
-    #ifdef IMU
+#ifdef IMU
     //Initialize Protobuf for Gyro
     BetCALL__IMU** imu_messages;
     imu_messages = malloc (sizeof (BetCALL__IMU*) * NUMBER_OF_IMU_DATA_PACKETS);
@@ -195,15 +195,15 @@ int main(int argc __attribute__((unused)),
     }
     sensors.n_imu = NUMBER_OF_IMU_DATA_PACKETS;
     sensors.imu = imu_messages;
-    #endif
-    #ifdef AIRSPEED
+#endif
+#ifdef AIRSPEED
     //Initialize Protobuf for Airspeed
     BetCALL__Airspeed airspeed = BET_CALL__AIRSPEED__INIT;
     BetCALL__Ticks airspeed_ticks = BET_CALL__TICKS__INIT;
     airspeed.ticks = &airspeed_ticks;
     airspeed.has_offset = 1;
     airspeed.has_raw = 1;
-    #endif
+#endif
 
 
 
@@ -257,31 +257,35 @@ int main(int argc __attribute__((unused)),
                 {
                     sensor_data_t* sensor_data =(sensor_data_t*) buffer;
                     printf("\nDEBUG output of message with seqNo %i and ticks %i\n", sensor_data->header.sequence_number, sensor_data->header.ticks);
+#ifdef IMU
+                    uint16_t n_imu = 0;
                     for (int32_t i = 0 ; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
                     {
-#ifdef IMU
+                        if (sensor_data->imu[i].header.sequence_number != 0 || sensor_data->imu[i].header.ticks !=0)
+                        {
+                            //Debug output on beaglebone
+                            printf("IMU package %i with seqNo %i and %i ticks\n", i, sensor_data->imu[i].header.sequence_number, sensor_data->imu[i].header.ticks);
+                            printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].accel.x, sensor_data->imu[i].accel.y, sensor_data->imu[i].accel.z);
+                            printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu[i].gyro.p, sensor_data->imu[i].gyro.q,sensor_data->imu[i].gyro.r );
+                            printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].mag.x, sensor_data->imu[i].mag.y, sensor_data->imu[i].mag.z);
 
-                        //Debug output on beaglebone
-                        printf("IMU package %i with seqNo %i and %i ticks\n", i, sensor_data->imu[i].header.sequence_number, sensor_data->imu[i].header.ticks);
-                        printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].accel.x, sensor_data->imu[i].accel.y, sensor_data->imu[i].accel.z);
-                        printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu[i].gyro.p, sensor_data->imu[i].gyro.q,sensor_data->imu[i].gyro.r );
-                        printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].mag.x, sensor_data->imu[i].mag.y, sensor_data->imu[i].mag.z);
-
-                        //setting data in protobufs
-                        imu_messages[i]->accel->x = sensor_data->imu[i].accel.x;
-                        imu_messages[i]->accel->y = sensor_data->imu[i].accel.y;
-                        imu_messages[i]->accel->z = sensor_data->imu[i].accel.z;
-                        imu_messages[i]->gyro->z = sensor_data->imu[i].gyro.p;
-                        imu_messages[i]->gyro->y = sensor_data->imu[i].gyro.q;
-                        imu_messages[i]->gyro->x = sensor_data->imu[i].gyro.r;
-                        imu_messages[i]->mag->y = sensor_data->imu[i].mag.x;
-                        imu_messages[i]->mag->x = sensor_data->imu[i].mag.y;
-                        imu_messages[i]->mag->z = sensor_data->imu[i].mag.z;
-                        imu_messages[i]->ticks->ticks = sensor_data->imu[i].header.ticks;
-                        imu_messages[i]->ticks->incremented = sensor_data->imu[i].header.incremented_ticks;
-                        imu_messages[i]->sequencenumber = sensor_data->imu[i].header.sequence_number;
-                        sensors.imu = imu_messages;
-                        sensors.n_imu = NUMBER_OF_IMU_DATA_PACKETS;
+                            //setting data in protobufs
+                            imu_messages[i]->accel->x = sensor_data->imu[i].accel.x;
+                            imu_messages[i]->accel->y = sensor_data->imu[i].accel.y;
+                            imu_messages[i]->accel->z = sensor_data->imu[i].accel.z;
+                            imu_messages[i]->gyro->z = sensor_data->imu[i].gyro.p;
+                            imu_messages[i]->gyro->y = sensor_data->imu[i].gyro.q;
+                            imu_messages[i]->gyro->x = sensor_data->imu[i].gyro.r;
+                            imu_messages[i]->mag->y = sensor_data->imu[i].mag.x;
+                            imu_messages[i]->mag->x = sensor_data->imu[i].mag.y;
+                            imu_messages[i]->mag->z = sensor_data->imu[i].mag.z;
+                            imu_messages[i]->ticks->ticks = sensor_data->imu[i].header.ticks;
+                            imu_messages[i]->ticks->incremented = sensor_data->imu[i].header.incremented_ticks;
+                            imu_messages[i]->sequencenumber = sensor_data->imu[i].header.sequence_number;
+                            sensors.imu = imu_messages;
+                            n_imu++;
+                        }
+                        sensors.n_imu = n_imu;
 #endif
 
 
