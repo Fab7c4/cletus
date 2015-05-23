@@ -175,10 +175,10 @@ static int lisa_check_message_checksum(uint8_t* buffer, uint16_t length)
     uint16_t i;
     for ( i = 0 ; i < length ; i+=4)
     {
-        currentData = (*(uint32_t *)(buffer + i)) |
-                (*(uint32_t *)(buffer + i + 1)) << 8 |
-                                                   (*(uint32_t *)(buffer + i + 2)) << 16 |
-                                                   (*(uint32_t *)(buffer + i + 3)) << 24;
+        currentData =   (*(uint8_t *)(buffer + i)) |
+                        (*(uint8_t *)(buffer + i + 1)) << 8 |
+                        (*(uint8_t *)(buffer + i + 2)) << 16 |
+                        (*(uint8_t *)(buffer + i + 3)) << 24;
         crc32 = Crc32Fast(crc32, currentData);
         //	printf("Current crc 0x%08x for data 0x%08x and loop idx %d \n", crc32, currentData, i);
     }
@@ -187,18 +187,18 @@ static int lisa_check_message_checksum(uint8_t* buffer, uint16_t length)
     //printf("Modulo operation result %d\n", length%4);
     switch (length % 4) {
     case 1:
-        currentData = *(uint32_t *)(buffer + i);
+        currentData = *(uint8_t *)(buffer + i);
         crc32 = Crc32Fast(crc32, currentData);
         break;
     case 2:
-        currentData = (*(uint32_t *)(buffer + i)) |
-                (*(uint8_t *)(buffer + i + 1)) << 8;
+        currentData =   (*(uint8_t *)(buffer + i)) |
+                        (*(uint8_t *)(buffer + i + 1)) << 8;
         crc32 = Crc32Fast(crc32, currentData);
         break;
     case 3:
-        currentData = (*(uint32_t *)(buffer + i)) |
-                (*(uint32_t *)(buffer + i + 1)) << 8 |
-                                                   (*(uint32_t *)(buffer + i + 2)) << 16;
+        currentData =   (*(uint8_t *)(buffer + i)) |
+                        (*(uint8_t *)(buffer + i + 1)) << 8 |
+                        (*(uint8_t *)(buffer + i + 2)) << 16;
         crc32 = Crc32Fast(crc32, currentData);
         break;
     default:
