@@ -154,7 +154,7 @@ int main(int argc __attribute__((unused)),
     zsock_log = setup_zmq_sender(LOG_CHAN, &zctx, ZMQ_PUSH, 100, 500);
     if (NULL == zsock_log)
         die(1);
-    zsock_groundstation = setup_zmq_sender(GROUNDSTATION_SEND_CHAN, &zctx, ZMQ_REQ, 10, 512);
+    zsock_groundstation = setup_zmq_sender(GROUNDSTATION_SEND_CHAN, &zctx, ZMQ_PUB, 10, 512);
     if (NULL == zsock_groundstation)
         die(1);
 
