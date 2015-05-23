@@ -1,13 +1,13 @@
 # What's the executable called?
-PROJ =  run_uart run_sensors run_controller run_actuators run_print_output run_logger
+PROJ =  run_arduino run_sensors run_controller run_actuators run_print_output run_logger
 
 
 
 # What C or C++ files must we compile to make the executable?
-C_SRC = run_uart.c \
-	run_controller.c \
+C_SRC = run_controller.c \
 	run_actuators.c \
 	run_sensors.c \
+	run_arduino.c \
 	run_print_output.c \
 	run_logger.c \
 	sensors.c \
@@ -18,8 +18,10 @@ C_SRC = run_uart.c \
 	misc.c \
 	zmq.c \
     lisa.c\
+	arduino.c\
     communication/spi/spi_comm.c\
     communication/gpio/gpio.c \
+	communication/uart/uart_comm.c \
 	betcomm/c/betcall.pb-c.c\
 	betcomm/c/betlog.pb-c.c
 
