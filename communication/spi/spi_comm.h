@@ -25,6 +25,7 @@
 /// Available SPI devices on BBB
 // default device :spidev1.0 --> SPI0 on BBB
 #define SPI_COMM_DEVICE_SPI1 "/dev/spidev1.0"
+#define SPI_COMM_DEVICE_SPI2 "/dev/spidev2.0"
 
 typedef struct spi_ioc_transfer spi_ioc_transfer_t;
 

@@ -68,7 +68,7 @@ int arduino_init(unsigned char* buffer)
 
 static int arduino_spi_init(void)
 {
-    arduino.spi = spi_comm_init(SPI_COMM_DEVICE_SPI1, 1);
+    arduino.spi = spi_comm_init(SPI_COMM_DEVICE_SPI2, 1);
     if (arduino.spi == NULL)
     {
         printf("Error initializing SPI port for lisa!\n");
