@@ -21,7 +21,6 @@ C_SRC = run_controller.c \
 	arduino.c\
     communication/spi/spi_comm.c\
     communication/gpio/gpio.c \
-	communication/uart/uart_comm.c \
 	betcomm/c/betcall.pb-c.c\
 	betcomm/c/betlog.pb-c.c
 
