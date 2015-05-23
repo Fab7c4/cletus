@@ -37,6 +37,7 @@
 #define AHRS
 #define AIRSPEED
 #define GPS
+#define LINEANGLE
 #endif
 
 
@@ -205,6 +206,12 @@ int main(int argc __attribute__((unused)),
     airspeed.has_offset = 1;
     airspeed.has_raw = 1;
 #endif
+#ifdef LINEANGLE
+    //Initialize Protobuf for Airspeed
+    BetCALL__LineAngle lineangle = BET_CALL__LINE_ANGLE__INIT;
+    BetCALL__Ticks lineangle_ticks = BET_CALL__TICKS__INIT;
+    lineangle.ticks = &lineangle_ticks;
+#endif
 
 
 
@@ -259,56 +266,94 @@ int main(int argc __attribute__((unused)),
                     sensor_data_t* sensor_data =(sensor_data_t*) buffer;
                     printf("\nDEBUG output of message with seqNo %i and ticks %i\n", sensor_data->header.sequence_number, sensor_data->header.ticks);
                     sensors_ticks.ticks = sensor_data->header.ticks;
-                    sensors_ticks.incremented = sensor_data->header.incremented_ticks;
+                    sensors_ticks.incremented = sensor_data->header.seconds;
 #ifdef IMU
                     uint16_t n_imu = 0;
                     for (int32_t i = 0 ; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
                     {
-                        if (sensor_data->imu[i].header.sequence_number != 0 || sensor_data->imu[i].header.ticks !=0)
+                        if (sensor_data->imu_plane[i].header.sequence_number != 0 || sensor_data->imu_plane[i].header.ticks !=0)
                         {
                             //Debug output on beaglebone
-                            printf("IMU package %i with seqNo %i and %i ticks\n", i, sensor_data->imu[i].header.sequence_number, sensor_data->imu[i].header.ticks);
-                            printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].accel.x, sensor_data->imu[i].accel.y, sensor_data->imu[i].accel.z);
-                            printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu[i].gyro.p, sensor_data->imu[i].gyro.q,sensor_data->imu[i].gyro.r );
-                            printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu[i].mag.x, sensor_data->imu[i].mag.y, sensor_data->imu[i].mag.z);
+                            printf("IMU PLANE package %i with seqNo %i and %i ticks\n", i, sensor_data->imu_plane[i].header.sequence_number, sensor_data->imu_plane[i].header.ticks);
+                            printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu_plane[i].accel.x, sensor_data->imu_plane[i].accel.y, sensor_data->imu_plane[i].accel.z);
+                            printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu_plane[i].gyro.p, sensor_data->imu_plane[i].gyro.q,sensor_data->imu_plane[i].gyro.r );
+                            printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu_plane[i].mag.x, sensor_data->imu_plane[i].mag.y, sensor_data->imu_plane[i].mag.z);
 
                             //setting data in protobufs
-                            imu_messages[i]->accel->x = sensor_data->imu[i].accel.x;
-                            imu_messages[i]->accel->y = sensor_data->imu[i].accel.y;
-                            imu_messages[i]->accel->z = sensor_data->imu[i].accel.z;
-                            imu_messages[i]->gyro->z = sensor_data->imu[i].gyro.p;
-                            imu_messages[i]->gyro->y = sensor_data->imu[i].gyro.q;
-                            imu_messages[i]->gyro->x = sensor_data->imu[i].gyro.r;
-                            imu_messages[i]->mag->y = sensor_data->imu[i].mag.x;
-                            imu_messages[i]->mag->x = sensor_data->imu[i].mag.y;
-                            imu_messages[i]->mag->z = sensor_data->imu[i].mag.z;
-                            imu_messages[i]->ticks->ticks = sensor_data->imu[i].header.ticks;
-                            imu_messages[i]->ticks->incremented = sensor_data->imu[i].header.incremented_ticks;
-                            imu_messages[i]->sequencenumber = sensor_data->imu[i].header.sequence_number;
+                            imu_messages[i]->accel->x = sensor_data->imu_plane[i].accel.x;
+                            imu_messages[i]->accel->y = sensor_data->imu_plane[i].accel.y;
+                            imu_messages[i]->accel->z = sensor_data->imu_plane[i].accel.z;
+                            imu_messages[i]->gyro->z = sensor_data->imu_plane[i].gyro.p;
+                            imu_messages[i]->gyro->y = sensor_data->imu_plane[i].gyro.q;
+                            imu_messages[i]->gyro->x = sensor_data->imu_plane[i].gyro.r;
+                            imu_messages[i]->mag->y = sensor_data->imu_plane[i].mag.x;
+                            imu_messages[i]->mag->x = sensor_data->imu_plane[i].mag.y;
+                            imu_messages[i]->mag->z = sensor_data->imu_plane[i].mag.z;
+                            imu_messages[i]->ticks->ticks = sensor_data->imu_plane[i].header.ticks;
+                            imu_messages[i]->ticks->incremented = sensor_data->imu_plane[i].header.seconds;
+                            imu_messages[i]->sequencenumber = sensor_data->imu_plane[i].header.sequence_number;
                             sensors.imu = imu_messages;
                             n_imu++;
                         }
-                        sensors.n_imu = n_imu;
+                    }
+                    for (int32_t i = 0 ; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
+                    {
+                        if (sensor_data->imu_arm[i].header.sequence_number != 0 || sensor_data->imu_arm[i].header.ticks !=0)
+                        {
+                            //Debug output on beaglebone
+                            printf("IMU ARM package %i with seqNo %i and %i ticks\n", i, sensor_data->imu_arm[i].header.sequence_number, sensor_data->imu_arm[i].header.ticks);
+                            printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu_arm[i].accel.x, sensor_data->imu_arm[i].accel.y, sensor_data->imu_arm[i].accel.z);
+                            printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu_arm[i].gyro.p, sensor_data->imu_arm[i].gyro.q,sensor_data->imu_arm[i].gyro.r );
+                            printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu_arm[i].mag.x, sensor_data->imu_arm[i].mag.y, sensor_data->imu_arm[i].mag.z);
+
+                            //setting data in protobufs
+                            imu_messages[i]->accel->x = sensor_data->imu_arm[i].accel.x;
+                            imu_messages[i]->accel->y = sensor_data->imu_arm[i].accel.y;
+                            imu_messages[i]->accel->z = sensor_data->imu_arm[i].accel.z;
+                            imu_messages[i]->gyro->z = sensor_data->imu_arm[i].gyro.p;
+                            imu_messages[i]->gyro->y = sensor_data->imu_arm[i].gyro.q;
+                            imu_messages[i]->gyro->x = sensor_data->imu_arm[i].gyro.r;
+                            imu_messages[i]->mag->y = sensor_data->imu_arm[i].mag.x;
+                            imu_messages[i]->mag->x = sensor_data->imu_arm[i].mag.y;
+                            imu_messages[i]->mag->z = sensor_data->imu_arm[i].mag.z;
+                            imu_messages[i]->ticks->ticks = sensor_data->imu_arm[i].header.ticks;
+                            imu_messages[i]->ticks->incremented = sensor_data->imu_arm[i].header.seconds;
+                            imu_messages[i]->sequencenumber = sensor_data->imu_arm[i].header.sequence_number;
+                            sensors.imu = imu_messages;
+                            n_imu++;
+                        }
+                    }
+                    sensors.n_imu = n_imu;
 #endif
 
-
-                    }
 
 #ifdef AIRSPEED
                     printf("AIRSPEED package with seqNo %i and %i ticks\n",sensor_data->airspeed.header.sequence_number, sensor_data->airspeed.header.ticks);
                     printf("Airspeed \tscaled=%f\traw=%i\toffset=%i\n",sensor_data->airspeed.scaled, sensor_data->airspeed.raw, sensor_data->airspeed.offset);
 
                     airspeed.ticks->ticks = sensor_data->airspeed.header.ticks;
-                    airspeed.ticks->incremented = sensor_data->airspeed.header.incremented_ticks;
+                    airspeed.ticks->incremented = sensor_data->airspeed.header.seconds;
                     airspeed.scaled = sensor_data->airspeed.scaled;
                     airspeed.raw = sensor_data->airspeed.raw;
                     airspeed.offset = sensor_data->airspeed.offset;
                     sensors.airspeed = &airspeed;
 #endif
+#ifdef LINEANGLE
+                    printf("LINEANGLE1 package with seqNo %i and %i ticks\n",sensor_data->lineangle1.header.sequence_number, sensor_data->lineangle1.header.ticks);
+                    printf("LINEANGLE2 package with seqNo %i and %i ticks\n",sensor_data->lineangle2.header.sequence_number, sensor_data->lineangle2.header.ticks);
+
+                    printf("Lineangle1=%i \tLinangle2=%i\n",sensor_data->lineangle1.raw_angle, sensor_data->lineangle2.raw_angle);
+
+                    lineangle.ticks->ticks = sensor_data->lineangle1.header.ticks;
+                    lineangle.ticks->incremented = sensor_data->airspeed.header.seconds;
+                    lineangle.elevation = sensor_data->lineangle1.raw_angle;
+                    lineangle.azimuth =  sensor_data->lineangle2.raw_angle;
+                    sensors.line_angle = &lineangle;
+
                     get_betcall_timestamp(&sensors_timestamp);
                     sensors.timestamp = &sensors_timestamp;
                     sensors.ticks = &sensors_ticks;
-
+#endif
                 }
                 else if (retval == ERROR_CHECKSUM)
                 {
