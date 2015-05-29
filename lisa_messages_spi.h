@@ -6,7 +6,7 @@
 /// via SPI communication
 
 #define PACKED __attribute__((__packed__))
-#define NUMBER_OF_IMU_DATA_PACKETS 10
+#define NUMBER_OF_IMU_DATA_PACKETS 5
 
 
 ///********************************************************************
