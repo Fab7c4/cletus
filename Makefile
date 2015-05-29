@@ -17,14 +17,16 @@ C_SRC = run_controller.c \
 	print_output.c \
 	misc.c \
 	zmq.c \
-    lisa.c\
+  lisa.c\
 	arduino.c\
-    communication/spi/spi_comm.c\
-    communication/gpio/gpio.c \
+  communication/spi/spi_comm.c\
+  communication/gpio/gpio.c \
 	betcomm/c/betcall.pb-c.c\
 	betcomm/c/betlog.pb-c.c
 
 
+SUB_PROJECTS = \
+	betcomm
 
 
 CXX_SRC = \
@@ -94,10 +96,13 @@ HS_STRUCTS = hs/src/Structs/Structures.hs hs/src/Structs/Structures.hsc
 
 .PHONY: debug
 debug: CFLAGS+= $(DEBUGFLAGS) $(C_FEATUREFLAGS)
-debug: build
+debug: subsystems build
 
 .PHONY: all
-all: build
+all: subsystems build
+
+subsystems:
+	         $(MAKE) -C $(SUB_PROJECTS)
 
 .PHONY: build
 build: $(PROTOS_C) $(PROTOS_CXX) $(PROTOS_PY) protos_cpp/messages.pb.o protos_c/messages.pb-c.o $(PROJ)
