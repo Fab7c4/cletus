@@ -154,7 +154,11 @@ int lisa_read_message(void)
         }
         printf("\n");
 
-        printf("Error prooving checksum for message!\n");
+        printf("Error prooving checksum for message!\n Cleaning buffer!\n");
+        for (uint8_t i = 0; i < 5; i++)
+        {
+          spi_comm_receive(lisa.spi, lisa.buffer, sizeof(sensor_data_t));
+        }
 
         return ERROR_CHECKSUM;
     }
