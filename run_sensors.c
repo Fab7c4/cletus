@@ -175,7 +175,7 @@ int main(int argc __attribute__((unused)),
     //Initialize Protobuf for Gyro
     BetCALL__IMU** imu_messages;
     imu_messages = malloc (sizeof (BetCALL__IMU*) * NUMBER_OF_IMU_DATA_PACKETS);
-    for (size_t i = 0; i < NUMBER_OF_IMU_DATA_PACKETS; i++)
+    for (size_t i = 0; i < IMU_ARRAY_SIZE; i++)
     {
         imu_messages[i] = malloc (sizeof (BetCALL__IMU));
         bet_call__imu__init (imu_messages[i]);
@@ -195,7 +195,7 @@ int main(int argc __attribute__((unused)),
         bet_call__xyz_i__init(mag_data);
         imu_messages[i]->mag = mag_data;
     }
-    sensors.n_imu = NUMBER_OF_IMU_DATA_PACKETS;
+    sensors.n_imu = IMU_ARRAY_SIZE;
     sensors.imu = imu_messages;
 #endif
 #ifdef AIRSPEED
@@ -349,11 +349,11 @@ int main(int argc __attribute__((unused)),
                     lineangle.elevation = sensor_data->lineangle1.raw_angle;
                     lineangle.azimuth =  sensor_data->lineangle2.raw_angle;
                     sensors.line_angle = &lineangle;
+                    #endif
 
                     get_betcall_timestamp(&sensors_timestamp);
                     sensors.timestamp = &sensors_timestamp;
                     sensors.ticks = &sensors_ticks;
-#endif
                 }
                 else if (retval == ERROR_CHECKSUM)
                 {

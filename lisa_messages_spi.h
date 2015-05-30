@@ -7,6 +7,8 @@
 
 #define PACKED __attribute__((__packed__))
 #define NUMBER_OF_IMU_DATA_PACKETS 5
+#define IMU_ARRAY_SIZE 10
+
 
 
 ///********************************************************************
