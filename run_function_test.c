@@ -16,6 +16,7 @@
 #include "./comms.h"
 #include "./structures.h"
 #include "./log.h"
+#include "./actuators.h"
 
 #include "./uart.h"
 #include "./lisa_messages_telemetry.h"
@@ -78,6 +79,8 @@ int main(int argc __attribute__((unused)),
       output.servos_msg.servo_6 = value;
       output.servos_msg.servo_7 = value;
 
+
+      calculate_checksum((uint8_t*) &output, &(output.checksums.checksum1), &(output.checksums.checksum2));
       write_uart((uint8_t*)&output,sizeof(output));
 
       usleep(5000);
@@ -94,6 +97,7 @@ int main(int argc __attribute__((unused)),
       output.servos_msg.servo_6 = -value;
       output.servos_msg.servo_7 = -value;
 
+      calculate_checksum((uint8_t*) &output, &(output.checksums.checksum1), &(output.checksums.checksum2));
       write_uart((uint8_t*)&output,sizeof(output));
 
       usleep(5000);
