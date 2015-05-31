@@ -10,7 +10,7 @@
 enum lisa_msg_info{
     BYTES_CHECKSUM = 2, //Number of bytes used for the checksum
     BYTES_HEADER =  2, //Number of Bytes until message  (length, senderid)
-    SENDER_ID = 166, //Senser ID of the Lisa set with paparazzi
+    SENDER_ID = 24, //Senser ID of the Lisa set with paparazzi
     LISA_STARTBYTE = 0x99,
     WINDSENSOR_STARTBYTE =0x24,
     LISA_INDEX_MSG_ID = 3,
@@ -39,7 +39,7 @@ enum Message_id{
   IMU_GYRO = 200,
   IMU_ACCEL = 202,
   IMU_MAG = 201,
-  SERVO_COMMANDS = 72,
+  SERVO_COMMANDS = 24,
   AHRS_QUAT_INT = 157,
   ROTORCRAFT_RADIO_CONTROL = 160
 };
