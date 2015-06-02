@@ -1,5 +1,5 @@
 # What's the executable called?
-PROJ =  run_arduino run_sensors run_controller run_actuators run_print_output run_logger run_function_test
+PROJ =  run_arduino run_sensors run_controller run_actuators run_print_output run_logger run_function_test run_sensors_dummy
 
 
 
@@ -7,6 +7,7 @@ PROJ =  run_arduino run_sensors run_controller run_actuators run_print_output ru
 C_SRC = run_controller.c \
 	run_actuators.c \
 	run_sensors.c \
+    run_sensors_dummy.c \
 	run_arduino.c \
 	run_print_output.c \
 	run_logger.c \
