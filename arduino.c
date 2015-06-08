@@ -1,6 +1,8 @@
 #include "arduino.h"
 #include "./communication/spi/spi_comm.h"
 #include "./communication/gpio/gpio.h"
+#include "./communication/usb_hid/usb_hid.h"
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,11 +21,13 @@
 #define DEFAULT_ARDUINO_GPIO_PIN 14
 
 
-static int arduino_spi_init(void);
+//static int arduino_spi_init(void);
 static int arduino_gpio_init(void);
+static int arduino_usb_init(void);
+#ifdef ARDUINO_USE_CHECKSUM
 static int arduino_check_message_checksum(uint8_t* buffer, uint16_t length);
 static uint32_t Crc32Fast(uint32_t crc, uint32_t data);
-
+#endif
 
 
 
@@ -41,6 +45,7 @@ typedef struct {
 typedef struct {
     arduino_state_t* state;
     spi_device_t* spi;
+    usb_hid_device_t* usb;
     gpio_t* gpio;
     unsigned char* buffer;
 } arduino_t;
@@ -53,7 +58,8 @@ int arduino_init(unsigned char* buffer)
     int retval;
     arduino.state = malloc(sizeof(arduino_state_t));
 
-    retval = arduino_spi_init();
+    //retval = arduino_spi_init();
+    retval = arduino_usb_init();
     retval = arduino_gpio_init();
 
     arduino.buffer = buffer;
@@ -66,15 +72,27 @@ int arduino_init(unsigned char* buffer)
 
 }
 
-static int arduino_spi_init(void)
+//static int arduino_spi_init(void)
+//{
+//    arduino.spi = spi_comm_init(SPI_COMM_DEVICE_SPI2, 1);
+//    if (arduino.spi == NULL)
+//    {
+
+//        printf("Error initializing SPI port for arduino!\n");
+//        return -1;
+//    }
+//    spi_comm_set_max_clock_rate(arduino.spi, DEFAULT_ARDUINO_SPI_CLOCK_RATE);
+//    return 1;
+//}
+
+static int arduino_usb_init(void)
 {
-    arduino.spi = spi_comm_init(SPI_COMM_DEVICE_SPI2, 1);
-    if (arduino.spi == NULL)
+    arduino.usb = usb_hid_init(DEFAULT_PC_VID,DEFAULT_PC_VID);
+    if (arduino.usb == NULL)
     {
-        printf("Error initializing SPI port for lisa!\n");
+        printf("Error initializing USB port for arduino!\n");
         return -1;
     }
-    spi_comm_set_max_clock_rate(arduino.spi, DEFAULT_ARDUINO_SPI_CLOCK_RATE);
     return 1;
 }
 
@@ -142,14 +160,15 @@ void arduino_close(void)
 int arduino_read_message(void)
 {
     int ret;
-    ret = spi_comm_receive(arduino.spi, arduino.buffer, sizeof(sensor_data_t));
+    //ret = spi_comm_receive(arduino.spi, arduino.buffer, sizeof(sensor_data_t));
+    ret = usb_hid_receive_packet(arduino.usb, arduino.buffer, sizeof(sensor_data_t), 1);
     if (ret < 0)
     {
         arduino.state->n_failed++;
         printf("Error receiving data from SPI port!\n");
         return ERROR_COMMUNICATION;
     }
-
+#ifdef ARDUINO_USE_CHECKSUM
     ret = arduino_check_message_checksum(arduino.buffer,sizeof(sensor_data_t)-4);
     if (ret < 0)
     {
@@ -165,6 +184,7 @@ int arduino_read_message(void)
         return ERROR_CHECKSUM;
     }
     printf("Checksum OK \n");
+#endif
     return COMPLETE;
 }
 
@@ -173,7 +193,7 @@ sensor_data_t* arduino_get_message_data(void)
     return (sensor_data_t*) arduino.buffer;
 }
 
-
+#ifdef ARDUINO_USE_CHECKSUM
 static int arduino_check_message_checksum(uint8_t* buffer, uint16_t length)
 {
     uint32_t currentData= 0;
@@ -244,3 +264,4 @@ uint32_t Crc32Fast(uint32_t crc, uint32_t data)
 
     return(crc);
 }
+#endif

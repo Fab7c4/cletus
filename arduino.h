@@ -3,7 +3,7 @@
 
 #include <sys/epoll.h>
 #include "./structures.h"
-#include "arduino_messages_spi.h"
+#include "arduino_messages_usb.h"
 
 
 typedef struct epoll_event epoll_event_t;
