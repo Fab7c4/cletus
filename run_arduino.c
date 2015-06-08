@@ -241,103 +241,82 @@ int main(int argc __attribute__((unused)),
 
     arduino_init(buffer);
 
-    int epoll = epoll_create(1);
-    if (epoll == -1)
-    {
-        printf("Error in epoll_create\n");
-        die(1);
-    }
-    epoll_ctl(epoll,EPOLL_CTL_ADD,arduino_get_gpio_fd(), arduino_get_epoll_event());
-    struct epoll_event pevents[ 1 ];
-
     //When sensor data is in circular buffer
     while (1)
     {
         printf("...\n");
-        int retval = epoll_wait(epoll,pevents,1,500);
         if (bail) die(bail);
+        int retval = arduino_read_message();
         if (retval > 0)
         {
-            if ( pevents[0].events & EPOLLIN )
-            {
-                retval = arduino_read_message();
-                if (retval > 0)
-                {
-                    sensor_data_t* sensor_data =(sensor_data_t*) buffer;
+            sensor_data_t* sensor_data =(sensor_data_t*) buffer;
 #ifdef IMU
-                    uint16_t n_imu = 0;
-                    int i =0;
-                    //Debug output on beaglebone
-                    printf("IMU PLANE package %i with seqNo %i and %i ticks\n", i, sensor_data->imu.header.sequence_number, sensor_data->imu.header.ticks);
-                    printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu.accel.x, sensor_data->imu.accel.y, sensor_data->imu.accel.z);
-                    printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu.gyro.p, sensor_data->imu.gyro.q,sensor_data->imu.gyro.r );
-                    printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu.mag.x, sensor_data->imu.mag.y, sensor_data->imu.mag.z);
+            uint16_t n_imu = 0;
+            int i =0;
+            //Debug output on beaglebone
+            printf("IMU PLANE package %i with seqNo %i and %i ticks\n", i, sensor_data->imu.header.sequence_number, sensor_data->imu.header.ticks);
+            printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu.accel.x, sensor_data->imu.accel.y, sensor_data->imu.accel.z);
+            printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu.gyro.p, sensor_data->imu.gyro.q,sensor_data->imu.gyro.r );
+            printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu.mag.x, sensor_data->imu.mag.y, sensor_data->imu.mag.z);
 
-                    //setting data in protobufs
-                    imu_messages[i]->accel->x = sensor_data->imu.accel.x;
-                    imu_messages[i]->accel->y = sensor_data->imu.accel.y;
-                    imu_messages[i]->accel->z = sensor_data->imu.accel.z;
-                    imu_messages[i]->gyro->z = sensor_data->imu.gyro.p;
-                    imu_messages[i]->gyro->y = sensor_data->imu.gyro.q;
-                    imu_messages[i]->gyro->x = sensor_data->imu.gyro.r;
-                    imu_messages[i]->mag->y = sensor_data->imu.mag.x;
-                    imu_messages[i]->mag->x = sensor_data->imu.mag.y;
-                    imu_messages[i]->mag->z = sensor_data->imu.mag.z;
-                    imu_messages[i]->ticks->ticks = sensor_data->imu.header.ticks;
-                    imu_messages[i]->ticks->incremented = sensor_data->imu.header.seconds;
-                    imu_messages[i]->sequencenumber = sensor_data->imu.header.sequence_number;
-                    sensors.imu = imu_messages;
-                    n_imu++;
+            //setting data in protobufs
+            imu_messages[i]->accel->x = sensor_data->imu.accel.x;
+            imu_messages[i]->accel->y = sensor_data->imu.accel.y;
+            imu_messages[i]->accel->z = sensor_data->imu.accel.z;
+            imu_messages[i]->gyro->z = sensor_data->imu.gyro.p;
+            imu_messages[i]->gyro->y = sensor_data->imu.gyro.q;
+            imu_messages[i]->gyro->x = sensor_data->imu.gyro.r;
+            imu_messages[i]->mag->y = sensor_data->imu.mag.x;
+            imu_messages[i]->mag->x = sensor_data->imu.mag.y;
+            imu_messages[i]->mag->z = sensor_data->imu.mag.z;
+            imu_messages[i]->ticks->ticks = sensor_data->imu.header.ticks;
+            imu_messages[i]->ticks->incremented = sensor_data->imu.header.seconds;
+            imu_messages[i]->sequencenumber = sensor_data->imu.header.sequence_number;
+            sensors.imu = imu_messages;
+            n_imu++;
 
-                    sensors.n_imu = n_imu;
+            sensors.n_imu = n_imu;
 #endif
 
 
 #ifdef AIRSPEED
-                    printf("AIRSPEED package with seqNo %i and %i ticks\n",sensor_data->airspeed.header.sequence_number, sensor_data->airspeed.header.ticks);
-                    printf("Airspeed \tscaled=%i\traw=%i\toffset=%i\n",sensor_data->airspeed.scaled, sensor_data->airspeed.raw, sensor_data->airspeed.offset);
+            printf("AIRSPEED package with seqNo %i and %i ticks\n",sensor_data->airspeed.header.sequence_number, sensor_data->airspeed.header.ticks);
+            printf("Airspeed \tscaled=%i\traw=%i\toffset=%i\n",sensor_data->airspeed.scaled, sensor_data->airspeed.raw, sensor_data->airspeed.offset);
 
-                    airspeed.ticks->ticks = sensor_data->airspeed.header.ticks;
-                    airspeed.ticks->incremented = sensor_data->airspeed.header.seconds;
-                    airspeed.scaled = sensor_data->airspeed.scaled;
-                    airspeed.raw = sensor_data->airspeed.raw;
-                    airspeed.offset = sensor_data->airspeed.offset;
-                    sensors.airspeed = &airspeed;
+            airspeed.ticks->ticks = sensor_data->airspeed.header.ticks;
+            airspeed.ticks->incremented = sensor_data->airspeed.header.seconds;
+            airspeed.scaled = sensor_data->airspeed.scaled;
+            airspeed.raw = sensor_data->airspeed.raw;
+            airspeed.offset = sensor_data->airspeed.offset;
+            sensors.airspeed = &airspeed;
 #endif
 #ifdef LINEANGLE
-                    printf("LINEANGLE package with seqNo %i and %i ticks\n",sensor_data->lineangle.header.sequence_number, sensor_data->lineangle.header.ticks);
+            printf("LINEANGLE package with seqNo %i and %i ticks\n",sensor_data->lineangle.header.sequence_number, sensor_data->lineangle.header.ticks);
 
-                    printf("Lineangle=%i \n",sensor_data->lineangle.raw_angle);
+            printf("Lineangle=%i \n",sensor_data->lineangle.raw_angle);
 
-                    lineangle.ticks->ticks = sensor_data->lineangle.header.ticks;
-                    lineangle.ticks->incremented = sensor_data->lineangle.header.seconds;
-                    lineangle.elevation = sensor_data->lineangle.raw_angle;
-                    lineangle.azimuth =  sensor_data->lineangle.raw_angle;
-                    sensors.line_angle = &lineangle;
+            lineangle.ticks->ticks = sensor_data->lineangle.header.ticks;
+            lineangle.ticks->incremented = sensor_data->lineangle.header.seconds;
+            lineangle.elevation = sensor_data->lineangle.raw_angle;
+            lineangle.azimuth =  sensor_data->lineangle.raw_angle;
+            sensors.line_angle = &lineangle;
 
 #endif
-                    get_betcall_timestamp(&sensors_timestamp);
-                    sensors.timestamp = &sensors_timestamp;
-                    sensors.ticks = &sensors_ticks;
+            get_betcall_timestamp(&sensors_timestamp);
+            sensors.timestamp = &sensors_timestamp;
+            sensors.ticks = &sensors_ticks;
 
-                }
-                else if (retval == ERROR_CHECKSUM)
-                {
-                    send_warning(zsock_print,TAG,"ERROR Checksum test failed for id %i\n");
-                    continue;
-                }
-                else if (retval == ERROR_COMMUNICATION)
-                {
-                    send_warning(zsock_print,TAG,"ERROR wrong receiving data\n");
-                    continue;
-                }
-            }
         }
-        else
+        else if (retval == ERROR_CHECKSUM)
         {
+            send_warning(zsock_print,TAG,"ERROR Checksum test failed for id %i\n");
             continue;
         }
-
+        else if (retval == ERROR_COMMUNICATION)
+        {
+            send_warning(zsock_print,TAG,"ERROR wrong receiving data\n");
+            continue;
+        }
         //get size of packed data
         packed_length = bet_call__sensors__get_packed_size(&sensors);
         //pack data to buffer
