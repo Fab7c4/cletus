@@ -75,6 +75,7 @@ sensor_data_lineangle_t ;
 ///********************************************************************
 
 typedef struct PACKED {
+  uint8_t type;
   sensor_data_imu_t imu;
   sensor_data_lineangle_t lineangle;
 }

@@ -19,11 +19,15 @@
 
 #define DEFAULT_ARDUINO_SPI_CLOCK_RATE 500 * kHz
 #define DEFAULT_ARDUINO_GPIO_PIN 14
+#define DEFAULT_USB_HID_PACKET_SIZE 64
+#define DEFAULT_USB_HID_TIMEOUT 1
 
 
-//static int arduino_spi_init(void);
-static int arduino_gpio_init(void);
 static int arduino_usb_init(void);
+#ifdef ARDUINO_USE_SPI
+static int arduino_spi_init(void);
+static int arduino_gpio_init(void);
+#endif
 #ifdef ARDUINO_USE_CHECKSUM
 static int arduino_check_message_checksum(uint8_t* buffer, uint16_t length);
 static uint32_t Crc32Fast(uint32_t crc, uint32_t data);
@@ -44,9 +48,11 @@ typedef struct {
 
 typedef struct {
     arduino_state_t* state;
+#ifdef ARDUINO_USE_SPI
     spi_device_t* spi;
-    usb_hid_device_t* usb;
     gpio_t* gpio;
+#endif
+    usb_hid_device_t* usb;
     unsigned char* buffer;
 } arduino_t;
 
@@ -58,10 +64,11 @@ int arduino_init(unsigned char* buffer)
     int retval;
     arduino.state = malloc(sizeof(arduino_state_t));
 
-    //retval = arduino_spi_init();
     retval = arduino_usb_init();
+#ifdef ARDUINO_USE_SPI
+    retval = arduino_spi_init();
     retval = arduino_gpio_init();
-
+#endif
     arduino.buffer = buffer;
     if (arduino.buffer == NULL)
     {
@@ -72,22 +79,9 @@ int arduino_init(unsigned char* buffer)
 
 }
 
-//static int arduino_spi_init(void)
-//{
-//    arduino.spi = spi_comm_init(SPI_COMM_DEVICE_SPI2, 1);
-//    if (arduino.spi == NULL)
-//    {
-
-//        printf("Error initializing SPI port for arduino!\n");
-//        return -1;
-//    }
-//    spi_comm_set_max_clock_rate(arduino.spi, DEFAULT_ARDUINO_SPI_CLOCK_RATE);
-//    return 1;
-//}
-
 static int arduino_usb_init(void)
 {
-    arduino.usb = usb_hid_init(DEFAULT_PC_VID,DEFAULT_PC_VID);
+    arduino.usb = usb_hid_init(DEFAULT_ARDUINO_VID,DEFAULT_ARDUINO_PID);
     if (arduino.usb == NULL)
     {
         printf("Error initializing USB port for arduino!\n");
@@ -95,6 +89,22 @@ static int arduino_usb_init(void)
     }
     return 1;
 }
+
+#ifdef ARDUINO_USE_SPI
+
+static int arduino_spi_init(void)
+{
+    arduino.spi = spi_comm_init(SPI_COMM_DEVICE_SPI2, 1);
+    if (arduino.spi == NULL)
+    {
+
+        printf("Error initializing SPI port for arduino!\n");
+        return -1;
+    }
+    spi_comm_set_max_clock_rate(arduino.spi, DEFAULT_ARDUINO_SPI_CLOCK_RATE);
+    return 1;
+}
+
 
 static int arduino_gpio_init(void)
 {
@@ -126,14 +136,20 @@ static int arduino_gpio_init(void)
     }
     return retval;
 }
+#endif
 
 int arduino_get_gpio_fd(void)
 {
+#ifdef ARDUINO_USE_SPI
     return arduino.gpio->fd;
+#else
+    return -1;
+#endif
 }
 
 epoll_event_t* arduino_get_epoll_event(void)
 {
+#ifdef ARDUINO_USE_SPI
     epoll_event_t* event = malloc(sizeof(epoll_event_t));
     if (event  == NULL )
     {
@@ -144,15 +160,22 @@ epoll_event_t* arduino_get_epoll_event(void)
     event->data.fd = arduino.gpio->fd;
     arduino.gpio->event_ptr = event;
     return arduino.gpio->event_ptr;
+#else
+    return NULL;
+#endif
 }
 
 void arduino_close(void)
 {
+#ifdef ARDUINO_USE_SPI
     spi_comm_close(arduino.spi);
     gpio_fd_close(arduino.gpio->fd);
     gpio_unexport(DEFAULT_ARDUINO_GPIO_PIN);
     free(arduino.gpio);
+#endif
+    usb_hid_close(arduino.usb);
     free(arduino.state);
+    printf("Closed Arduino!\n");
 
 }
 
@@ -161,7 +184,7 @@ int arduino_read_message(void)
 {
     int ret;
     //ret = spi_comm_receive(arduino.spi, arduino.buffer, sizeof(sensor_data_t));
-    ret = usb_hid_receive_packet(arduino.usb, arduino.buffer, sizeof(sensor_data_t), 1);
+    ret = usb_hid_receive_packet(arduino.usb, arduino.buffer, DEFAULT_USB_HID_PACKET_SIZE, DEFAULT_USB_HID_TIMEOUT);
     if (ret < 0)
     {
         arduino.state->n_failed++;
@@ -185,7 +208,7 @@ int arduino_read_message(void)
     }
     printf("Checksum OK \n");
 #endif
-    return COMPLETE;
+    return ret;
 }
 
 sensor_data_t* arduino_get_message_data(void)

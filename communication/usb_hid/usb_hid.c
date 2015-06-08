@@ -37,7 +37,10 @@ usb_hid_device_t* usb_hid_init(const int vid, const int pid){
     if (ret <= 0)
         pabort("Error opening hid device with VID and PID.");
     else
-        device->device = ret;
+    {
+        printf("Opened USB device %d sucessfully\n",ret);
+        device->device = ret-1;
+    }
     return device;
 }
 
@@ -55,7 +58,6 @@ int usb_hid_receive_packet(usb_hid_device_t* device, uint8_t* buffer, uint16_t l
     int num = rawhid_recv(device->device, buffer, length, timeout_ms);
     if (num < 0) {
         printf("\nerror reading, device went offline\n");
-        usb_hid_close(device);
         return -1;
     }
     return num;
