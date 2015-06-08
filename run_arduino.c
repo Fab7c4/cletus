@@ -267,6 +267,8 @@ int main(int argc __attribute__((unused)),
     clock_gettime(CLOCK_MONOTONIC ,&t);
     /* start after one second */
     t.tv_sec++;
+    int64_t t_old = t.tv_sec;
+    uint32_t messages_sent_per_sec =0;
 
 
     //When sensor data is in circular buffer
@@ -274,7 +276,6 @@ int main(int argc __attribute__((unused)),
     {
         if (bail) die(bail);
         /* wait until next shot */
-        printf("...\n");
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t, NULL);
         if (bail) die(bail);
         uint16_t messages_read =0;
@@ -284,7 +285,9 @@ int main(int argc __attribute__((unused)),
             if (retval > 0)
             {
                 sensor_data_t* sensor_data =(sensor_data_t*) buffer;
+#ifdef DEBUG
                 printf("Received message of type %d\n",sensor_data->type);
+#endif
 #ifdef IMU
                 switch (sensor_data->type)
                 {
@@ -304,8 +307,9 @@ int main(int argc __attribute__((unused)),
 #endif               
 
 #ifdef LINEANGLE
+#ifdef DEBUG
                 printf("LINEANGLE package with seqNo %i and %i ticks\n",sensor_data->lineangle.header.sequence_number, sensor_data->lineangle.header.ticks);
-
+#endif
                 fill_betcall_lineangle(&lineangle, sensor_data);
                 sensors.line_angle = &lineangle;
 #endif
@@ -325,7 +329,9 @@ int main(int argc __attribute__((unused)),
             }
             else
             {
+#ifdef DEBUG
                 printf("...\n");
+#endif
                 usleep(100);
             }
         }
@@ -336,6 +342,7 @@ int main(int argc __attribute__((unused)),
         packed_length = bet_call__sensors__get_packed_size(&sensors);
         //pack data to buffer
         bet_call__sensors__pack(&sensors,zmq_buffer);
+        messages_sent_per_sec++;
         //sending sensor message over zmq to groundstation
         int zs = zmq_send(zsock_groundstation, zmq_buffer, packed_length, 0);
         if (zs < 0) {
@@ -351,6 +358,13 @@ int main(int argc __attribute__((unused)),
             send_debug(zsock_print,TAG,"Message sent to other process!, size: %u\n", packed_length);
         }
         bet_call__sensors__init(&sensors);
+        calc_next_shot(&t,rt_interval);
+        if (t.tv_sec != t_old)
+        {
+            printf("Sending messages with a frequency of %u Hz\n", messages_sent_per_sec);
+            messages_sent_per_sec = 0;
+            t_old = t.tv_sec;
+        }
     }
 
     /* Shouldn't get here. */
@@ -359,9 +373,11 @@ int main(int argc __attribute__((unused)),
 
 static void fill_betcall_imu(BetCALL__IMU* betcall, sensor_data_t* sensor_data)
 {
+#ifdef DEBUG
     printf("Accel \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu.accel.x, sensor_data->imu.accel.y, sensor_data->imu.accel.z);
     printf("Gyro \tp=%i\tq=%i\tr=%i\n",sensor_data->imu.gyro.p, sensor_data->imu.gyro.q,sensor_data->imu.gyro.r );
     printf("Mag \tX=%i\tY=%i\tZ=%i\n",sensor_data->imu.mag.x, sensor_data->imu.mag.y, sensor_data->imu.mag.z);
+#endif
     //setting data in protobufs
     betcall->accel->x = sensor_data->imu.accel.x;
     betcall->accel->y = sensor_data->imu.accel.y;
@@ -379,7 +395,9 @@ static void fill_betcall_imu(BetCALL__IMU* betcall, sensor_data_t* sensor_data)
 
 static void fill_betcall_lineangle(BetCALL__LineAngle* betcall, sensor_data_t* sensor_data)
 {
+#ifdef DEBUG
     printf("Lineangle%i=%i \n",sensor_data->type,sensor_data->lineangle.raw_angle);
+#endif
 
     betcall->ticks->ticks = sensor_data->lineangle.header.ticks;
     betcall->ticks->incremented = sensor_data->lineangle.header.seconds;
