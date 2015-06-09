@@ -19,8 +19,11 @@
 #include "./misc.h"
 #include "./actuators.h"
 
+
 #include "./uart.h"
-#include "./lisa_messages_telemetry.h"
+#include "./arduino_messages_usb.h"
+#include "./betcomm/c/betpush.pb-c.h"
+
 
 
 char* const TAG = "RUN_ACTUATORS";
@@ -30,6 +33,8 @@ static void *zctx = NULL;
 static void *zsock_controller = NULL;
 void *zsock_print = NULL;
 static void *zsock_log = NULL;
+static void *zsock_groundstation = NULL;
+
 
 
 
@@ -40,6 +45,7 @@ static void __attribute__((noreturn)) die(int code) {
     zdestroy(zsock_controller, NULL);
     zdestroy(zsock_print,NULL);
     zdestroy(zsock_log,NULL);
+    zdestroy(zsock_groundstation,NULL);
     serial_port_close();
     printf("%d TX fails; %d RX fails.\n", txfails, rxfails);
     printf("Moriturus te saluto!\n");
@@ -119,23 +125,18 @@ int main(int argc __attribute__((unused)),
     zsock_print = setup_zmq_sender(PRINT_CHAN, &zctx, ZMQ_PUSH, 1000, 500);
     if (NULL == zsock_print)
         die(1);
+    zsock_groundstation = setup_zmq_receiver(GROUNDSTATION_RECV_CHAN, &zctx, ZMQ_SUB, NULL, 1, 500);
+    if (NULL == zsock_groundstation)
+        die(1);
 
 
 
     /* Actuator data storage. */
-    Protobetty__Actuators* input_controller;
-    Protobetty__LogMessage log_msg = PROTOBETTY__LOG_MESSAGE__INIT;
-    log_msg.process = PROTOBETTY__LOG_MESSAGE__PROCESS__Actuators;
-    Protobetty__Servos servos = PROTOBETTY__SERVOS__INIT;
-    servos.direction = PROTOBETTY__SERVOS__DIRECTION__BONE2LISA;
-    Protobetty__Timestamp servos_time = PROTOBETTY__TIMESTAMP__INIT;
-    servos.timestamp = &servos_time;
+    BetPUSH__Actuators* actuators;
     //create template for actuator message for lisa
-    lisa_actuators_t output;
-    output.startbyte = LISA_STARTBYTE;
-    output.servos_msg.header.length = sizeof(lisa_actuators_t);
-    output.servos_msg.header.sender_id = SENDER_ID;
-    output.servos_msg.header.msg_id = SERVO_COMMANDS;
+    sensor_data_actuators_t output;
+    output.startbyte = 0xFE;
+
 
 #ifdef DEBUG
     printf("Servo Message Header: Startbyte -> %x \n\t length -> %i \n\t SenderID -> %i \n\t MessageID -> %i \n",
@@ -143,16 +144,23 @@ int main(int argc __attribute__((unused)),
 
 #endif
 
-    zmq_pollitem_t poll_controller = {
+//    zmq_pollitem_t poll_controller = {
+//        /* Inputs -- in this case, our incoming actuator commands. */
+//            .socket = zsock_controller,
+//            .fd = -1,
+//            .events = ZMQ_POLLIN,
+//            .revents = 0
+//    };
+
+    zmq_pollitem_t poll_groundstation = {
         /* Inputs -- in this case, our incoming actuator commands. */
-            .socket = zsock_controller,
+            .socket = zsock_groundstation,
             .fd = -1,
             .events = ZMQ_POLLIN,
             .revents = 0
     };
 
-
-    uint8_t zmq_buffer[PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE]; // Input data container for bytes
+    uint8_t zmq_buffer[BET_PUSH__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE]; // Input data container for bytes
 
     clock_gettime(CLOCK_MONOTONIC ,&t);
     /* start after one second */
@@ -170,7 +178,7 @@ int main(int argc __attribute__((unused)),
     for (;;) {
         if (bail) die(bail);
         /* Poll for activity; time out after 10 milliseconds. */
-        const int polled = zmq_poll(&poll_controller, 1, 10);
+        const int polled = zmq_poll(&poll_groundstation, 1, 10);
         if (polled < 0) {
             if (bail) die(bail);
             zerr("while polling");
@@ -183,60 +191,25 @@ int main(int argc __attribute__((unused)),
         }
 
         if (bail) die(bail);
-        if (poll_controller.revents & ZMQ_POLLIN) {
+        if (poll_groundstation.revents & ZMQ_POLLIN) {
             /* Read in some sensor data from this sensor. */
-            const int zr = zmq_recvm(zsock_controller, zmq_buffer,
-                                     PROTOBETTY__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
-            input_controller = protobetty__actuators__unpack(NULL,zr,zmq_buffer);
+            const int zr = zmq_recvm(zsock_groundstation, zmq_buffer,
+                                     BET_PUSH__MESSAGE__CONSTANTS__MAX_MESSAGE_SIZE);
+            actuators = bet_push__actuators__unpack(NULL,zr,zmq_buffer);
 
 
-            if (input_controller != NULL){
-                send_debug(zsock_print,TAG,"Received Actuators message with latency %f ms and \n rudd:%f\n elev:%f\n ail:%f\n flaps:%f",
-                           calcCurrentLatencyProto(input_controller->timestamp),
-                           input_controller->rudd,
-                           input_controller->elev,
-                           input_controller->ail,
-                           input_controller->flaps);
-                convert_for_lisa(input_controller, &output);
+            if (actuators != NULL){
+                output.flaps = actuators->flaps_right;
+                output.rudder = actuators->rudder;
+                output.elevator = actuators->elevator;
+                output.aileron = actuators->ailerons_right;
+                printf("Sending servo values:\n rudder:%d\t elevator:%d\t flap:%d\t aileron:%d\t",output.rudder,output.elevator, output.flaps, output.aileron );
+                calculate_checksum((uint8_t*) &output, sizeof(output)-2, &(output.checksum1), &(output.checksum2));
                 write_uart((uint8_t*)&output,sizeof(output));
-#ifdef DEBUG
-                send_debug(zsock_print,TAG,"Writing servo commannds 1 -> %i \n\t 2 -> %i\n\t 3 -> %i\n\t 4 -> %i\n\t 5 -> %i\n\t 6 -> %i\n\t 7 -> %i\n",
-                           (int)output.servos_msg.servo_1,
-                           (int)output.servos_msg.servo_2,
-                           (int)output.servos_msg.servo_3,
-                           (int)output.servos_msg.servo_4,
-                           (int)output.servos_msg.servo_5,
-                           (int)output.servos_msg.servo_6,
-                           (int)output.servos_msg.servo_7);
-#endif
-
-                get_protbetty_timestamp(servos.timestamp);
-                servos.timestamp_controller = input_controller->timestamp;
-                servos.servo1 = output.servos_msg.servo_1;
-                servos.servo2 = output.servos_msg.servo_2;
-                servos.servo3 = output.servos_msg.servo_3;
-                servos.servo4 = output.servos_msg.servo_4;
-                servos.servo5 = output.servos_msg.servo_5;
-                servos.servo6 = output.servos_msg.servo_6;
-                servos.servo7 = output.servos_msg.servo_7;
-                log_msg.servos = &servos;
-                log_msg.actuators = input_controller;
-                const int packed_length = protobetty__log_message__get_packed_size(&log_msg); //
-                protobetty__log_message__pack(&log_msg, zmq_buffer);
-                const int zs_log = zmq_send(zsock_log,zmq_buffer, packed_length,ZMQ_NOBLOCK);
-                if (zs_log < 0) {
-                    txfails++;
-                } else {
-    #ifdef DEBUG
-                    send_debug(zsock_print,TAG,"Sent to actuators wit timestamp %f",
-                               floating_ProtoTime(input_controller->timestamp));
-    #endif
-                }
-
             }
             /* Clear the poll state. */
-            poll_controller.revents = 0;
-            poll_controller.events = ZMQ_POLLIN;
+            poll_groundstation.revents = 0;
+            poll_groundstation.events = ZMQ_POLLIN;
         }
 
 
