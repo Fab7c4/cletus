@@ -25,6 +25,11 @@
 #include "./betcomm/c/betpush.pb-c.h"
 
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+#define MIN_SERVO_VALUE 0
+#define MAX_SERVO_VALUE 180
 
 char* const TAG = "RUN_ACTUATORS";
 
@@ -193,10 +198,25 @@ int main(int argc __attribute__((unused)),
 
 
             if (actuators != NULL){
-                output.flaps = actuators->flaps_right;
-                output.rudder = actuators->rudder;
-                output.elevator = actuators->elevator;
-                output.aileron = actuators->ailerons_right;
+                //Bound values to SERVO LIMITS
+                int32_t t_flaps, t_rudder, t_elevator, t_aileron;
+                t_flaps = MIN(actuators->flaps_right, MAX_SERVO_VALUE);
+                t_flaps = MAX(t_flaps, MIN_SERVO_VALUE);
+
+                t_rudder = MIN(actuators->rudder, MAX_SERVO_VALUE);
+                t_rudder = MAX(t_rudder, MIN_SERVO_VALUE);
+
+                t_elevator = MIN(actuators->elevator, MAX_SERVO_VALUE);
+                t_elevator = MAX(t_elevator, MIN_SERVO_VALUE);
+
+                t_aileron = MIN(actuators->ailerons_right, MAX_SERVO_VALUE);
+                t_aileron = MAX(t_aileron, MIN_SERVO_VALUE);
+
+                //Set values
+                output.flaps =(uint8_t) t_flaps;
+                output.rudder =(uint8_t) t_rudder;
+                output.elevator =(uint8_t) t_elevator;
+                output.aileron =(uint8_t) t_aileron;
                 printf("Sending servo values:\n rudder:%d\t elevator:%d\t flap:%d\t aileron:%d\t",output.rudder,output.elevator, output.flaps, output.aileron );
                 calculate_checksum((uint8_t*) &output, sizeof(output)-2, &(output.checksum1), &(output.checksum2));
                 write_uart((uint8_t*)&output,sizeof(output));
