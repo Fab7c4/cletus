@@ -30,7 +30,7 @@ static char FILENAME[] = "uart_communication.c";
 
 //extern serial_port *serial_stream;
 
-speed_t speed = B921600;
+speed_t speed = B9600;
 //Variables for serial port
 const char device[]="/dev/ttyO4";
 const char device_enabled_check[] = "ttyO4_armhf.com"; //For Angstrom: enable-uart5
