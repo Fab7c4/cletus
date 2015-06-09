@@ -138,12 +138,6 @@ int main(int argc __attribute__((unused)),
     output.startbyte = 0xFE;
 
 
-#ifdef DEBUG
-    printf("Servo Message Header: Startbyte -> %x \n\t length -> %i \n\t SenderID -> %i \n\t MessageID -> %i \n",
-           output.startbyte,output.servos_msg.header.length,output.servos_msg.header.sender_id,output.servos_msg.header.msg_id);
-
-#endif
-
 //    zmq_pollitem_t poll_controller = {
 //        /* Inputs -- in this case, our incoming actuator commands. */
 //            .socket = zsock_controller,
