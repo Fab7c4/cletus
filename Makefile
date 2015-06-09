@@ -26,6 +26,7 @@ C_SRC = run_controller.c \
     communication/usb_hid/hid.c \
     communication/usb_hid/usb_hid.c \
     betcomm/c/betcall.pb-c.c\
+    betcomm/c/betpush.pb-c.c\
     betcomm/c/betlog.pb-c.c
 
 
