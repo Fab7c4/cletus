@@ -84,15 +84,15 @@ sensor_data_t ;
 ///********************************************************************
 /// Actuator MESSAGE DEFINITIONS
 ///********************************************************************
-typedef struct PACKED {
-    sensor_data_header_t header;
-    sensor_data_header_t set_time;
-    uint32_t flaps_right;
-    uint32_t flaps_left;
-    uint32_t ailerons_right;
-    uint32_t ailerons_left;
-    uint32_t rudder;
-    uint32_t elevator;
-} sensor_data_actuators_t ;
 
+#define STARTBYTE 0x99
+typedef struct PACKED {
+    uint8_t startbyte;
+    uint8_t flaps;
+    uint8_t aileron;
+    uint8_t rudder;
+    uint8_t elevator;
+    uint8_t checksum1;
+    uint8_t checksum2;
+} sensor_data_actuators_t ;
 #endif // MESSAGEDEFINITIONS_H

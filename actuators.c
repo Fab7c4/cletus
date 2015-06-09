@@ -36,20 +36,19 @@ void convert_for_lisa(const Protobetty__Actuators * const actuators, lisa_actuat
   msg->servos_msg.servo_6 = (int16_t)(actuators->rudd * coef);
   msg->servos_msg.servo_7 = 0;
 
-  calculate_checksum((uint8_t*) msg, &(msg->checksums.checksum1), &(msg->checksums.checksum2));
+  //calculate_checksum((uint8_t*) msg, &(msg->checksums.checksum1), &(msg->checksums.checksum2));
 }
 
 
-void calculate_checksum(uint8_t buffer[],uint8_t *checksum_1,uint8_t *checksum_2){
+void calculate_checksum(uint8_t* buffer, uint16_t length, uint8_t *checksum_1,uint8_t *checksum_2){
 #ifdef DEBUG
   printf("Entering calculate_checksum\n");
 #endif
-  int length = buffer[LENGTH_INDEX];
   *checksum_1=0;
   *checksum_2=0;
 
   //start byte '0x99' is not in checksum
-  for (int i=1;i<length-2;i++)
+  for (int i=1;i<length;i++)
     {
       *checksum_1 += buffer[i];
       *checksum_2 += *checksum_1;
