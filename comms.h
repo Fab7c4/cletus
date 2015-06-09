@@ -18,6 +18,8 @@
 #define LISA_CHAN "ipc:///tmp/lisa"
 #define PRINT_CHAN "ipc:///tmp/print"
 #define GROUNDSTATION_SEND_CHAN  "tcp://*:5555"
+#define GROUNDSTATION_RECV_CHAN  "tcp://*:5556"
+
 
 
 #endif  /* __COMMS_H__ */
