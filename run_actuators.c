@@ -28,8 +28,9 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-#define MIN_SERVO_VALUE 0
-#define MAX_SERVO_VALUE 180
+#define MIN_SERVO_VALUE -30
+#define MAX_SERVO_VALUE 30
+#define NEUTRAL_SERVO_VALUE 90
 
 char* const TAG = "RUN_ACTUATORS";
 
@@ -213,10 +214,10 @@ int main(int argc __attribute__((unused)),
                 t_aileron = MAX(t_aileron, MIN_SERVO_VALUE);
 
                 //Set values
-                output.flaps =(uint8_t) t_flaps;
-                output.rudder =(uint8_t) t_rudder;
-                output.elevator =(uint8_t) t_elevator;
-                output.aileron =(uint8_t) t_aileron;
+                output.flaps =(uint8_t) NEUTRAL_SERVO_VALUE + t_flaps;
+                output.rudder =(uint8_t) NEUTRAL_SERVO_VALUE + t_rudder;
+                output.elevator =(uint8_t) NEUTRAL_SERVO_VALUE + t_elevator;
+                output.aileron =(uint8_t) NEUTRAL_SERVO_VALUE + t_aileron;
                 printf("Sending servo values:\n rudder:%d\t elevator:%d\t flap:%d\t aileron:%d\t",output.rudder,output.elevator, output.flaps, output.aileron );
                 calculate_checksum((uint8_t*) &output, sizeof(output)-2, &(output.checksum1), &(output.checksum2));
                 write_uart((uint8_t*)&output,sizeof(output));
