@@ -62,7 +62,7 @@ int main(int argc __attribute__((unused)),
     sleep(2);
 
     sensor_data_actuators_t output;
-    output.startbyte = 0xFE;
+    //output.startbyte = 0xFE;
 
     while(1)
     {

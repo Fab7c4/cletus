@@ -24,6 +24,7 @@ epoll_event_t* arduino_get_epoll_event(void);
 int arduino_get_gpio_fd(void);
 int arduino_read_message(void);
 sensor_data_t* arduino_get_message_data(void);
+void arduino_send_message(uint8_t* buffer,uint16_t length);
 
 
 

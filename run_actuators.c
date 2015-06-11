@@ -141,7 +141,7 @@ int main(int argc __attribute__((unused)),
     BetPUSH__Actuators* actuators;
     //create template for actuator message for lisa
     sensor_data_actuators_t output;
-    output.startbyte = 0xFE;
+    //output.startbyte = 0xFE;
 
 
 //    zmq_pollitem_t poll_controller = {
@@ -178,7 +178,7 @@ int main(int argc __attribute__((unused)),
     for (;;) {
         if (bail) die(bail);
         /* Poll for activity; time out after 10 milliseconds. */
-        const int polled = zmq_poll(&poll_groundstation, 1, 10);
+        const int polled = zmq_poll(&poll_groundstation, 1, 0);
         if (polled < 0) {
             if (bail) die(bail);
             zerr("while polling");

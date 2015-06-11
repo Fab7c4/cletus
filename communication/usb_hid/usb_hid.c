@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 //#if defined(OS_LINUX) || defined(OS_MACOSX)
 //#include <sys/ioctl.h>
@@ -66,7 +67,9 @@ int usb_hid_receive_packet(usb_hid_device_t* device, uint8_t* buffer, uint16_t l
 int usb_hid_send_packet(usb_hid_device_t* device, uint8_t* buffer, uint16_t length, uint16_t timeout_ms)
 {
     assert(length <= MAX_PACKET_LENGTH);
-    int num = rawhid_recv(device->device, buffer, length, timeout_ms);
+    uint8_t temp[MAX_PACKET_LENGTH];
+    memcpy(&temp[0], buffer , length);
+    int num = rawhid_send(device->device, &temp[0], MAX_PACKET_LENGTH, timeout_ms);
     if (num < 0) {
         printf("\nerror sending, device went offline\n");
         usb_hid_close(device);

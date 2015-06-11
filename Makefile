@@ -1,11 +1,12 @@
 # What's the executable called?
-PROJ =  run_arduino run_sensors run_controller run_actuators run_print_output run_logger run_function_test run_sensors_dummy
+PROJ =  run_arduino run_arduino_usb run_sensors run_controller run_actuators run_print_output run_logger run_function_test run_sensors_dummy
 
 
 
 # What C or C++ files must we compile to make the executable?
 C_SRC = run_controller.c \
     run_actuators.c \
+    run_arduino_usb.c \
     run_sensors.c \
     run_sensors_dummy.c \
     run_arduino.c \

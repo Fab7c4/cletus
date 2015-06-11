@@ -87,7 +87,7 @@ sensor_data_t ;
 
 #define STARTBYTE 0x99
 typedef struct PACKED {
-    uint8_t startbyte;
+    //uint8_t startbyte;
     uint8_t flaps;
     uint8_t aileron;
     uint8_t rudder;

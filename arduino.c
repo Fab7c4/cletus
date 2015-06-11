@@ -179,6 +179,10 @@ void arduino_close(void)
 
 }
 
+void arduino_send_message(uint8_t* buffer,uint16_t length)
+{
+    usb_hid_send_packet(arduino.usb, buffer, length, 1);
+}
 
 int arduino_read_message(void)
 {
